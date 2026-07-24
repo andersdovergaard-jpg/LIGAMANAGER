@@ -1036,7 +1036,119 @@ function ShareScreen({ code, groupName, onContinue }) {
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────────────────────
+// ── WAITING ROOM ─────────────────────────────────────────────────────────────
+function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
+  const isGameMaster = league.gameMaster === user?.name;
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    setRefreshing(true);
+    const g = await loadGroup(league.code);
+    if (g) onUpdate(g);
+    setTimeout(() => setRefreshing(false), 500);
+  }
+
+  // Auto-poll every 10 seconds
+  useEffect(() => {
+    const iv = setInterval(async () => {
+      const g = await loadGroup(league.code);
+      if (g) onUpdate(g);
+    }, 10000);
+    return () => clearInterval(iv);
+  }, [league.code]);
+
+  // If draft has started (another client started it), go to draft
+  useEffect(() => {
+    if (league.phase === "draft") onStartDraft();
+  }, [league.phase]);
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title="Venteværelse"/>
+      <div style={{ maxWidth:480, margin:"0 auto", padding:"24px 16px 48px" }}>
+
+        {/* Group info */}
+        <div style={{ background:`linear-gradient(135deg,${C.blue}18,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:20, marginBottom:20, textAlign:"center", boxShadow:`0 0 32px ${C.blue}22` }}>
+          <div style={{ fontSize:11, letterSpacing:4, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
+          <div style={{ fontSize:42, fontWeight:900, letterSpacing:8 }}>{league.code}</div>
+          <div style={{ color:C.g1, fontSize:13, marginTop:6 }}>{league.name}</div>
+        </div>
+
+        <div style={{ color:C.g1, fontSize:13, marginBottom:16, textAlign:"center" }}>
+          Del koden med dine venner — de joiner på <strong style={{ color:C.white }}>liga-manager-kzcg.vercel.app</strong>
+        </div>
+
+        {/* Players joined */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase" }}>
+              Tilmeldte ({league.players.length})
+            </div>
+            <button onClick={refresh} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:6, color:C.g1, cursor:"pointer", fontSize:11, padding:"4px 10px", fontWeight:600 }}>
+              {refreshing ? "…" : "↻ Opdater"}
+            </button>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {league.players.map((p, i) => (
+              <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, border:`1px solid ${p.name === league.gameMaster ? C.blue+"44" : C.border}`, borderRadius:10 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:p.name === league.gameMaster ? C.blue : C.border2, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:p.name === league.gameMaster ? "#000" : C.g1, flexShrink:0 }}>
+                  {p.name[0].toUpperCase()}
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, fontSize:15 }}>{p.name}</div>
+                  {p.name === league.gameMaster && <div style={{ fontSize:11, color:C.blue, fontWeight:700 }}>Game Master</div>}
+                </div>
+                <div style={{ color:C.green, fontSize:18 }}>✓</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Waiting animation */}
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"center", gap:6 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:C.blue, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite` }}/>
+            ))}
+          </div>
+          <style>{`@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
+          <div style={{ color:C.g1, fontSize:12, marginTop:10, letterSpacing:1 }}>Venter på flere spillere…</div>
+        </div>
+
+        {/* Start draft — only game master */}
+        {isGameMaster && (
+          <div>
+            <div style={{ borderTop:`1px solid ${C.border}`, marginBottom:20 }}/>
+            <div style={{ color:C.g1, fontSize:13, marginBottom:16, textAlign:"center" }}>
+              {league.players.length < 2
+                ? "Mindst 2 spillere skal være med før du kan starte"
+                : `${league.players.length} spillere klar — du kan starte draftet nu`}
+            </div>
+            <Btn
+              onClick={async () => {
+                const updated = { ...league, phase:"draft", draftOrder: buildOrder(league.players, league.draftMode) };
+                onUpdate(updated);
+                await saveGroup(league.code, updated);
+                onStartDraft();
+              }}
+              disabled={league.players.length < 2}
+              full
+              style={{ padding:16, fontSize:15, letterSpacing:2 }}
+            >
+              🚀 Start draft nu
+            </Btn>
+          </div>
+        )}
+
+        {!isGameMaster && (
+          <div style={{ textAlign:"center", color:C.g2, fontSize:12, letterSpacing:1 }}>
+            Venter på at game master starter draftet…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function App() {
   const [screen, setScreen] = useState("loading");
   const [league, setLeague] = useState(null);
@@ -1097,7 +1209,7 @@ function App() {
 
   async function handleCreateGroup(leagueData) {
     const code = genCode();
-    const withCode = { ...leagueData, code };
+    const withCode = { ...leagueData, code, phase: "waiting", gameMaster: user?.name || "Game Master" };
     setGroupCode(code);
     await persistGroup(code, withCode);
     const updatedUser = { ...user, groupCode: code };
@@ -1127,7 +1239,8 @@ function App() {
     const updatedUser = { ...user, groupCode: code, name: playerName };
     setUser(updatedUser);
     await saveUser(updatedUser);
-    setScreen(updatedGroup.phase === "draft" ? "draft" : "league");
+    const dest = updatedGroup.phase === "waiting" ? "waiting" : updatedGroup.phase === "draft" ? "draft" : "league";
+    setScreen(dest);
   }
 
   function makeDemo() {
@@ -1173,12 +1286,13 @@ function App() {
 
   return <>
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    {screen==="auth"   && <AuthScreen   onAuth={handleAuth} onDemo={async()=>{ const d=makeDemo(); setLeague(d); setGroupCode("DEMO26"); setUser({name:"Sæfik",tier:"semipro",groupCode:"DEMO26"}); setScreen("league"); }}/>}
-    {screen==="home"   && <HomeScreen   saved={league} user={user} onNew={()=>setScreen("setup")} onJoin={()=>setScreen(league?.phase==="draft"?"draft":"league")} onLogout={handleLogout} onJoinGroup={()=>setScreen("join")}/>}
-    {screen==="setup"  && <SetupScreen  onBack={()=>setScreen("home")} onStart={handleCreateGroup}/>}
-    {screen==="share"  && <ShareScreen  code={shareCode} groupName={league?.name} onContinue={()=>setScreen("draft")}/>}
-    {screen==="join"   && <JoinScreen   onBack={()=>setScreen("home")} onJoin={handleJoin}/>}
-    {screen==="draft"  && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")}/>}
-    {screen==="league" && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")}/>}
+    {screen==="auth"    && <AuthScreen   onAuth={handleAuth} onDemo={async()=>{ const d=makeDemo(); setLeague(d); setGroupCode("DEMO26"); setUser({name:"Sæfik",tier:"semipro",groupCode:"DEMO26"}); setScreen("league"); }}/>}
+    {screen==="home"    && <HomeScreen   saved={league} user={user} onNew={()=>setScreen("setup")} onJoin={()=>setScreen(league?.phase==="waiting"?"waiting":league?.phase==="draft"?"draft":"league")} onLogout={handleLogout} onJoinGroup={()=>setScreen("join")}/>}
+    {screen==="setup"   && <SetupScreen  onBack={()=>setScreen("home")} onStart={handleCreateGroup}/>}
+    {screen==="share"   && <ShareScreen  code={shareCode} groupName={league?.name} onContinue={()=>setScreen("waiting")}/>}
+    {screen==="join"    && <JoinScreen   onBack={()=>setScreen("home")} onJoin={handleJoin}/>}
+    {screen==="waiting" && league && <WaitingRoom league={league} user={user} onStartDraft={()=>setScreen("draft")} onUpdate={l=>{ setLeague(l); }}/>}
+    {screen==="draft"   && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")}/>}
+    {screen==="league"  && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")}/>}
   </>;
 }
