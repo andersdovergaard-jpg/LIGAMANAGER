@@ -452,12 +452,26 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
   const total = activeLeagues.length * players.length;
   const dispPlayer = viewAs ? players.find(p=>p.id===viewAs) : curPicker;
 
+  const [justPicked, setJustPicked] = useState(null); // { nextPlayer, team, league }
+
   function pick(lid, team) {
     const np = { ...picks, [curId]: { ...(picks[curId]||{}), [lid]:team } };
     const done = isDraftDone(players, np, activeLeagues);
-    onUpdate({ picks:np, draftIdx:draftIdx+1, phase:done?"season":"draft" });
+    const newIdx = draftIdx + 1;
+    const nextPickerId = done ? null : draftOrder[newIdx];
+    const nextPlayer = done ? null : players.find(p => p.id === nextPickerId);
+    onUpdate({ picks:np, draftIdx:newIdx, phase:done?"season":"draft" });
     setSelLeague(null);
-    if(done) onFinish();
+    if (done) { onFinish(); return; }
+    if (nextPlayer) setJustPicked({ nextPlayer, team, leagueName: LEAGUES[lid].name });
+  }
+
+  function sendWhatsApp() {
+    if (!justPicked) return;
+    const url = `https://liga-manager-kzcg.vercel.app`;
+    const msg = `⚽ LigaManager — Det er din tur!\n\n${justPicked.nextPlayer.name}, du skal nu vælge dit næste hold.\n\nGruppe: ${league.name}\n\nÅbn appen og vælg: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+    setJustPicked(null);
   }
 
   return (
@@ -484,6 +498,1352 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
             ))}
           </div>
         </div>
+
+        {/* WhatsApp notifikation popup */}
+        {justPicked && (
+          <div style={{ background:`linear-gradient(135deg,#25D36622,${C.card})`, border:`1px solid #25D36644`, borderRadius:12, padding:16, marginBottom:16, boxShadow:`0 0 24px #25D36622` }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:"#25D366", fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Nu er det</div>
+            <div style={{ fontWeight:900, fontSize:20, marginBottom:4 }}>{justPicked.nextPlayer.name}s tur</div>
+            <div style={{ color:C.g1, fontSize:13, marginBottom:14 }}>Send en besked så de ved det er deres tur</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={sendWhatsApp} style={{ flex:1, background:"#25D366", border:"none", borderRadius:8, padding:"11px 16px", fontWeight:800, fontSize:13, cursor:"pointer", color:"#000", letterSpacing:.5 }}>
+                💬 Send WhatsApp
+              </button>
+              <button onClick={()=>setJustPicked(null)} style={{ background:C.card, border:`1px solid ${C.border2}`, borderRadius:8, padding:"11px 14px", fontWeight:700, fontSize:13, cursor:"pointer", color:C.g1 }}>
+                Spring over
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* View as */}
+        <div style={{ marginBottom:16 }}>
+          <Label>Se som</Label>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {players.map(p=>{
+              const active = viewAs===p.id||(!viewAs&&p.id===curId);
+              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer", background:active?C.blue+"22":C.card, border:`1px solid ${active?C.blue+"66":C.border}`, color:active?C.blue:C.g1, letterSpacing:.5 }}>{p.name}</button>;
+            })}
+          </div>
+        </div>
+
+        {/* Player picks */}
+        <Card style={{ marginBottom:16 }}>
+          <Label>{dispPlayer?.name}s hold</Label>
+          {activeLeagues.map(lid=>{
+            const team = picks[dispPlayer?.id]?.[lid];
+            const l = LEAGUES[lid];
+            return (
+              <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:20 }}>{l.flag}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
+                  <div style={{ fontWeight:700, fontSize:14, color:team?C.white:C.g2, marginTop:2 }}>{team||"Ikke valgt"}</div>
+                </div>
+                {team && <span style={{ color:C.green }}>✓</span>}
+              </div>
+            );
+          })}
+        </Card>
+
+        {/* League + team picker */}
+        {!viewAs && <>
+          <Label>Vælg liga</Label>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
+            {remainL.map(lid=>{
+              const l = LEAGUES[lid];
+              const active = selLeague===lid;
+              return (
+                <div key={lid} onClick={()=>setSelLeague(active?null:lid)} style={{ padding:"14px 14px", borderRadius:10, cursor:"pointer", background:active?l.color:C.card, border:`1px solid ${active?l.accent+"88":C.border}`, boxShadow:active?`0 0 20px ${l.accent}22`:"none", transition:"all .15s", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div>
+                    <div style={{ fontSize:24, marginBottom:4 }}>{l.flag}</div>
+                    <div style={{ fontSize:12, fontWeight:800, color:active?l.accent:C.white, letterSpacing:.5 }}>{l.name}</div>
+                  </div>
+                  <img src={l.logo} alt={l.name} style={{ width:36, height:36, objectFit:"contain", opacity:active?.95:.5, flexShrink:0 }} onError={e=>e.target.style.display="none"}/>
+                </div>
+              );
+            })}
+          </div>
+          {selLeague && (
+            <Card>
+              <Label>Vælg hold — {LEAGUES[selLeague].name}</Label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {TEAMS[selLeague].map(team=>{
+                  const t = taken[selLeague].includes(team);
+                  return <button key={team} onClick={()=>!t&&pick(selLeague,team)} style={{ padding:"8px 12px", borderRadius:6, fontSize:13, fontWeight:700, cursor:t?"not-allowed":"pointer", background:t?C.bg:C.surface, border:`1px solid ${t?C.border:C.border2}`, color:t?C.g2:C.white, textDecoration:t?"line-through":"none" }}>{team}</button>;
+                })}
+              </div>
+            </Card>
+          )}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+// ── LEAGUE ────────────────────────────────────────────────────────────────────
+function LeagueScreen({ league, onUpdate, onDraft }) {
+  const [tab, setTab] = useState("standings");
+  const { players, picks, standings, activeLeagues = LEAGUE_IDS } = league;
+
+  const scores = players.map(p=>({
+    ...p, total:calcPoints(picks[p.id]||{}, standings, activeLeagues),
+    byLeague:Object.fromEntries(activeLeagues.map(lid=>{
+      const team=picks[p.id]?.[lid];
+      const pos=(standings[lid]||[]).indexOf(team);
+      return [lid,{team,points:pos!==-1?pos+1:null}];
+    }))
+  })).sort((a,b)=>a.total-b.total);
+
+  function move(lid, team, dir) {
+    const t=[...(standings[lid]||[])];
+    const i=t.indexOf(team), ni=i+dir;
+    if(ni<0||ni>=t.length) return;
+    [t[i],t[ni]]=[t[ni],t[i]];
+    onUpdate({ standings:{...standings,[lid]:t} });
+  }
+
+  const PLAYER_COLORS = ["#00A8FF","#00ff85","#FFD700","#ff4d6d","#c77dff","#ff9d00","#00f5d4","#f72585","#4cc9f0","#b5e48c","#ffd6ff","#48cae4"];
+
+  // Use real history from league if available, otherwise simulate
+  const history = (() => {
+    if (league.history && league.history.length > 0) return league.history;
+    const sorted = [...scores].sort((a,b) => a.total - b.total);
+    return Array.from({ length: 10 }, (_, w) => {
+      return players.map(p => {
+        const finalRank = sorted.findIndex(s => s.id === p.id) + 1;
+        const noise = Math.round((Math.random() - 0.5) * (10 - w) * 0.8);
+        return { id: p.id, rank: Math.max(1, Math.min(players.length, finalRank + noise)) };
+      });
+    });
+  })();
+
+  function LineChart({ history, players, colors }) {
+    const W = 320, H = 200, PAD = { top:16, right:16, bottom:24, left:28 };
+    const innerW = W - PAD.left - PAD.right;
+    const innerH = H - PAD.top - PAD.bottom;
+    const weeks = history.length;
+    const maxRank = players.length;
+
+    function x(wi) { return PAD.left + (wi / (weeks - 1)) * innerW; }
+    function y(rank) { return PAD.top + ((rank - 1) / (maxRank - 1)) * innerH; }
+
+    function path(playerId) {
+      return history.map((week, wi) => {
+        const entry = week.find(e => e.id === playerId);
+        const rank = entry?.rank || 1;
+        return `${wi === 0 ? "M" : "L"}${x(wi).toFixed(1)},${y(rank).toFixed(1)}`;
+      }).join(" ");
+    }
+
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width:"100%", height:"auto", overflow:"visible" }}>
+        {/* Grid lines */}
+        {Array.from({ length: maxRank }, (_, i) => (
+          <line key={i} x1={PAD.left} x2={W - PAD.right} y1={y(i+1)} y2={y(i+1)}
+            stroke={C.border} strokeWidth="1" strokeDasharray="3,4"/>
+        ))}
+        {/* Week labels */}
+        {history.map((_, wi) => (
+          wi % 2 === 0 && <text key={wi} x={x(wi)} y={H - 4} textAnchor="middle" fontSize="9" fill={C.g2}>U{wi+1}</text>
+        ))}
+        {/* Rank labels */}
+        {Array.from({ length: maxRank }, (_, i) => (
+          <text key={i} x={PAD.left - 6} y={y(i+1) + 3} textAnchor="end" fontSize="9" fill={C.g2}>{i+1}</text>
+        ))}
+        {/* Lines */}
+        {players.map((p, pi) => (
+          <path key={p.id} d={path(p.id)} fill="none" stroke={colors[pi % colors.length]}
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            style={{ filter:`drop-shadow(0 0 4px ${colors[pi % colors.length]}88)` }}/>
+        ))}
+        {/* Dots at last week */}
+        {players.map((p, pi) => {
+          const last = history[history.length - 1]?.find(e => e.id === p.id);
+          if (!last) return null;
+          return <circle key={p.id} cx={x(history.length-1)} cy={y(last.rank)} r="4"
+            fill={colors[pi % colors.length]} stroke={C.bg} strokeWidth="2"/>;
+        })}
+      </svg>
+    );
+  }
+
+  const TABS=[{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title={league.name} right={
+        league.phase==="draft"
+          ? <button onClick={onDraft} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Draft →</button>
+          : <span style={{ fontSize:10, background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:4, padding:"3px 8px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Sæson</span>
+      }/>
+
+      {/* Tabs */}
+      <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, position:"sticky", top:49, background:C.bg, zIndex:9, overflowX:"auto" }}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:"13px 16px", background:"none", border:"none", cursor:"pointer", fontWeight:800, fontSize:11, letterSpacing:1.5, textTransform:"uppercase", color:tab===t.id?C.blue:C.g2, borderBottom:`2px solid ${tab===t.id?C.blue:"transparent"}`, transition:"all .15s", whiteSpace:"nowrap" }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ maxWidth:520, margin:"0 auto", padding:"20px 16px 56px" }}>
+
+        {tab==="standings" && (
+          <div>
+            {scores.map((p,i)=>{
+              // Compare to previous week in history
+              const lastWeek = history[history.length - 1]?.find(e => e.id === p.id);
+              const prevWeek = history[history.length - 2]?.find(e => e.id === p.id);
+              const prevRank = prevWeek?.rank;
+              const curRank = lastWeek?.rank;
+              const moved = prevRank && curRank ? prevRank - curRank : 0; // positive = moved up
+
+              return (
+              <div key={p.id} style={{ display:"flex", alignItems:"center", gap:14, padding:16, background:i===0?`linear-gradient(135deg,${C.gold}14,${C.card})`:C.card, border:`1px solid ${i===0?C.gold+"44":C.border}`, borderRadius:12, marginBottom:8, ...(i===0?GLOW_STYLE(C.gold):{}) }}>
+                {/* Position with arrows */}
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, flexShrink:0 }}>
+                  {moved > 0
+                    ? <span style={{ fontSize:10, color:C.green, lineHeight:1 }}>▲</span>
+                    : <span style={{ fontSize:10, lineHeight:1, opacity:0 }}>▲</span>}
+                  <div style={{ width:36, height:36, borderRadius:"50%", background:i===0?C.gold:i===1?"#C0C0C0":i===2?"#CD7F32":C.border2, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:15, color:i<3?"#000":C.g1 }}>{i+1}</div>
+                  {moved < 0
+                    ? <span style={{ fontSize:10, color:"#ff4d6d", lineHeight:1 }}>▼</span>
+                    : <span style={{ fontSize:10, lineHeight:1, opacity:0 }}>▼</span>}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:800, fontSize:16, letterSpacing:-0.3 }}>{p.name}</div>
+                  <div style={{ display:"flex", gap:8, marginTop:5, flexWrap:"wrap" }}>
+                    {activeLeagues.map(lid=>(
+                      <span key={lid} style={{ fontSize:11, color:C.g1 }}>{LEAGUES[lid].flag} {p.byLeague[lid].team||"–"}{p.byLeague[lid].points?` (${p.byLeague[lid].points})`:""}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0 }}>
+                  <div style={{ fontSize:28, fontWeight:900, color:i===0?C.gold:C.white, letterSpacing:-1 }}>{p.total}</div>
+                  <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>point</div>
+                </div>
+              </div>
+            );
+            })}
+            <div style={{ textAlign:"center", color:C.g2, fontSize:11, marginTop:20, letterSpacing:1.5, textTransform:"uppercase" }}>Færrest point vinder · Point = slutplacering</div>
+          </div>
+        )}
+
+        {tab==="udvikling" && (
+          <div>
+            <div style={{ color:C.g1, fontSize:12, marginBottom:20 }}>Intern placering uge for uge — lavere er bedre.</div>
+
+            {/* Chart card */}
+            <Card glow style={{ marginBottom:20, padding:"20px 12px 12px" }}>
+              <LineChart history={history} players={players} colors={PLAYER_COLORS}/>
+            </Card>
+
+            {/* Legend */}
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {scores.map((p, i) => {
+                const lastWeek = history[history.length - 1]?.find(e => e.id === p.id);
+                const currentRank = lastWeek?.rank || i + 1;
+                const prevWeek = history[history.length - 2]?.find(e => e.id === p.id);
+                const prevRank = prevWeek?.rank || currentRank;
+                const trend = prevRank - currentRank; // positive = moved up
+
+                return (
+                  <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, border:`1px solid ${C.border}`, borderRadius:10 }}>
+                    {/* Color dot */}
+                    <div style={{ width:12, height:12, borderRadius:"50%", background:PLAYER_COLORS[players.findIndex(pl=>pl.id===p.id) % PLAYER_COLORS.length], flexShrink:0, boxShadow:`0 0 8px ${PLAYER_COLORS[players.findIndex(pl=>pl.id===p.id) % PLAYER_COLORS.length]}88` }}/>
+                    {/* Name */}
+                    <div style={{ flex:1, fontWeight:700, fontSize:15 }}>{p.name}</div>
+                    {/* Trend */}
+                    {trend !== 0 && (
+                      <div style={{ fontSize:12, fontWeight:700, color:trend > 0 ? C.green : "#ff4d6d" }}>
+                        {trend > 0 ? `▲ ${trend}` : `▼ ${Math.abs(trend)}`}
+                      </div>
+                    )}
+                    {/* Current rank */}
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:22, fontWeight:900, color:currentRank === 1 ? C.gold : C.white, letterSpacing:-1 }}>{currentRank}</div>
+                      <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>plads</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ textAlign:"center", color:C.g2, fontSize:11, marginTop:20, letterSpacing:1.5, textTransform:"uppercase" }}>
+              Simuleret data · Opdateres automatisk med live API
+            </div>
+          </div>
+        )}
+
+
+          <div>
+            <div style={{ color:C.g1, fontSize:12, marginBottom:20 }}>Flyt hold op/ned for at opdatere placeringer manuelt.</div>
+            {activeLeagues.map(lid=>{
+              const l=LEAGUES[lid];
+              return (
+                <div key={lid} style={{ marginBottom:20 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                    <span style={{ fontSize:22 }}>{l.flag}</span>
+                    <span style={{ fontWeight:900, fontSize:15 }}>{l.name}</span>
+                  </div>
+                  <Card>
+                    {(standings[lid]||[]).map((team,pos)=>{
+                      const owner=players.find(p=>picks[p.id]?.[lid]===team);
+                      const last=pos===standings[lid].length-1;
+                      return (
+                        <div key={team} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom:last?"none":`1px solid ${C.border}` }}>
+                          <div style={{ width:22, textAlign:"center", fontSize:12, color:C.g2, fontWeight:700, flexShrink:0 }}>{pos+1}</div>
+                          <div style={{ flex:1 }}>
+                            <span style={{ fontSize:13, fontWeight:600 }}>{team}</span>
+                            {owner&&<span style={{ marginLeft:8, fontSize:11, color:C.blue, fontWeight:700 }}>{owner.name}</span>}
+                          </div>
+                          <div style={{ display:"flex", gap:4 }}>
+                            {[[-1,"↑"],[1,"↓"]].map(([dir,icon])=>(
+                              <button key={dir} onClick={()=>move(lid,team,dir)} disabled={(dir===-1&&pos===0)||(dir===1&&last)} style={{ background:C.surface, border:`1px solid ${C.border}`, color:((dir===-1&&pos===0)||(dir===1&&last))?C.g2:C.white, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:12, fontWeight:700 }}>{icon}</button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {tab==="teams" && (
+          <div>
+            {players.map(p=>(
+              <Card key={p.id} style={{ marginBottom:14 }}>
+                <div style={{ fontWeight:900, fontSize:18, letterSpacing:-0.5, marginBottom:14 }}>{p.name}</div>
+                {activeLeagues.map(lid=>{
+                  const team=picks[p.id]?.[lid];
+                  const pos=(standings[lid]||[]).indexOf(team);
+                  const pts=pos!==-1?pos+1:null;
+                  const l=LEAGUES[lid];
+                  return (
+                    <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ fontSize:20 }}>{l.flag}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
+                        <div style={{ fontWeight:700, fontSize:14, color:team?C.white:C.g2, marginTop:2 }}>{team||"Ikke valgt"}</div>
+                      </div>
+                      {pts&&<div style={{ textAlign:"right" }}><span style={{ fontSize:20, fontWeight:900 }}>{pts}</span><span style={{ fontSize:10, color:C.g2, marginLeft:2 }}>pt</span></div>}
+                    </div>
+                  );
+                })}
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── AUTH SCREENS ──────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth, onDemo }) {
+  const [mode, setMode] = useState("login"); // login | signup | forgot
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  const inp = {
+    background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:8,
+    color:C.white, padding:"14px 16px", fontSize:15, width:"100%",
+    boxSizing:"border-box", outline:"none", fontFamily:"inherit",
+  };
+
+  async function handleSubmit() {
+    setError("");
+    if (!email.trim()) return setError("Indtast din email");
+    if (mode !== "forgot" && password.length < 6) return setError("Adgangskode skal være mindst 6 tegn");
+    if (mode === "signup" && !name.trim()) return setError("Indtast dit navn");
+    setLoading(true);
+    // Simulate API call — replace with real auth (Supabase, Firebase etc.)
+    await new Promise(r => setTimeout(r, 1200));
+    setLoading(false);
+    if (mode === "forgot") { setMode("forgot-sent"); return; }
+    onAuth({ email: email.trim(), name: mode === "signup" ? name.trim() : email.split("@")[0], tier: "amateur" });
+  }
+
+  const page = { minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column" };
+
+  if (mode === "forgot-sent") return (
+    <div style={{ ...page, alignItems:"center", justifyContent:"center", padding:24, textAlign:"center" }}>
+      <div style={{ fontSize:48, marginBottom:16 }}>📬</div>
+      <h2 style={{ fontWeight:900, fontSize:22, margin:"0 0 8px" }}>Tjek din email</h2>
+      <p style={{ color:C.g1, fontSize:14, marginBottom:32 }}>Vi har sendt et link til <strong>{email}</strong></p>
+      <Btn variant="ghost" onClick={()=>setMode("login")} full>← Tilbage til login</Btn>
+    </div>
+  );
+
+  return (
+    <div style={page}>
+      {/* Header */}
+      <div style={{ position:"relative", overflow:"hidden", padding:"52px 24px 36px", textAlign:"center" }}>
+        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.blue}07 40px,${C.blue}07 41px)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.blue}18 0%,transparent 65%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"relative" }}>
+          <h1 style={{ margin:"0 0 4px", fontSize:42, fontWeight:900, letterSpacing:-2, lineHeight:1 }}>
+            LIGA<span style={{ color:C.blue }}>MANAGER</span>
+          </h1>
+          <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:10 }}>
+            {mode === "login" ? "Log ind for at fortsætte" : mode === "signup" ? "Opret din konto" : "Nulstil adgangskode"}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ flex:1, padding:"0 24px 40px", maxWidth:400, width:"100%", margin:"0 auto", boxSizing:"border-box" }}>
+
+        {error && (
+          <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#ff4d6d", marginBottom:16 }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:20 }}>
+          {mode === "signup" && (
+            <input placeholder="Dit navn" value={name} onChange={e=>setName(e.target.value)} style={inp}/>
+          )}
+          <input placeholder="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} style={inp}/>
+          {mode !== "forgot" && (
+            <div style={{ position:"relative" }}>
+              <input placeholder="Adgangskode" type={showPw?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} style={{ ...inp, paddingRight:50 }}
+                onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+              <button onClick={()=>setShowPw(!showPw)} style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", color:C.g1, cursor:"pointer", fontSize:16 }}>
+                {showPw ? "🙈" : "👁️"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {mode === "login" && (
+          <div style={{ textAlign:"right", marginBottom:20 }}>
+            <button onClick={()=>setMode("forgot")} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:13, fontWeight:600 }}>
+              Glemt adgangskode?
+            </button>
+          </div>
+        )}
+
+        <Btn onClick={handleSubmit} disabled={loading} full style={{ padding:16, fontSize:14, letterSpacing:2, marginBottom:16 }}>
+          {loading ? "…" : mode === "login" ? "Log ind" : mode === "signup" ? "Opret konto" : "Send nulstillingslink"}
+        </Btn>
+
+        {/* Divider */}
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+          <div style={{ flex:1, height:1, background:C.border2 }}/>
+          <span style={{ fontSize:12, color:C.g2, letterSpacing:1 }}>ELLER</span>
+          <div style={{ flex:1, height:1, background:C.border2 }}/>
+        </div>
+
+        {/* Social login */}
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
+          {[
+            { icon:"🍎", label:"Fortsæt med Apple", bg:"#fff", color:"#000" },
+            { icon:"🇬", label:"Fortsæt med Google", bg:"#fff", color:"#000" },
+          ].map(opt => (
+            <button key={opt.label} onClick={()=>onAuth({ email:"social@user.com", name:"Bruger", tier:"amateur" })} style={{
+              display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+              background:opt.bg, color:opt.color, border:"none", borderRadius:8,
+              padding:"13px 20px", fontSize:14, fontWeight:700, cursor:"pointer", width:"100%",
+            }}>
+              <span style={{ fontSize:18 }}>{opt.icon}</span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Toggle mode */}
+        <div style={{ textAlign:"center", fontSize:14, color:C.g1 }}>
+          {mode === "login" ? (
+            <>Har du ikke en konto? <button onClick={()=>{ setMode("signup"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>Opret konto</button></>
+          ) : mode === "signup" ? (
+            <>Har du allerede en konto? <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>Log ind</button></>
+          ) : (
+            <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>← Tilbage til login</button>
+          )}
+        </div>
+
+        {/* Dev demo */}
+        <div style={{ marginTop:32, textAlign:"center" }}>
+          <button onClick={onDemo} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:6, color:C.g1, cursor:"pointer", fontSize:12, letterSpacing:1, padding:"8px 20px", fontWeight:600 }}>
+            Se demo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── JOIN SCREEN ───────────────────────────────────────────────────────────────
+function JoinScreen({ onJoin, onBack, initialCode = "" }) {
+  const [code, setCode] = useState(initialCode.toUpperCase());
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const inp = { background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:8, color:C.white, padding:"14px 16px", fontSize:15, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
+
+  async function handleJoin() {
+    setError("");
+    if (code.length !== 6) return setError("Gruppekoden skal være 6 tegn");
+    if (!name.trim()) return setError("Indtast dit navn");
+    setLoading(true);
+    const group = await loadGroup(code.trim().toUpperCase());
+    setLoading(false);
+    if (!group) return setError("Ingen gruppe fundet med den kode — tjek koden og prøv igen");
+    const alreadyIn = group.players.some(p => p.name.toLowerCase() === name.trim().toLowerCase());
+    if (alreadyIn) { onJoin(code.trim().toUpperCase(), group, name.trim()); return; }
+    if (group.phase !== "draft" || group.draftIdx > 0) return setError("Draftet er allerede i gang — kontakt game master");
+    onJoin(code.trim().toUpperCase(), group, name.trim());
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title="Join gruppe" onBack={onBack}/>
+      <div style={{ maxWidth:400, margin:"0 auto", padding:"40px 24px" }}>
+        <div style={{ fontSize:36, textAlign:"center", marginBottom:16 }}>🔗</div>
+        <h2 style={{ fontWeight:900, fontSize:22, textAlign:"center", margin:"0 0 8px" }}>Tilmeld dig en gruppe</h2>
+        <p style={{ color:C.g1, fontSize:14, textAlign:"center", marginBottom:32 }}>Indtast den 6-cifrede kode du har modtaget</p>
+
+        {error && <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#ff4d6d", marginBottom:16 }}>{error}</div>}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
+          <input
+            placeholder="GRUPKODE"
+            value={code}
+            onChange={e => setCode(e.target.value.toUpperCase().slice(0,6))}
+            style={{ ...inp, fontSize:24, fontWeight:900, letterSpacing:6, textAlign:"center" }}
+          />
+          <input placeholder="Dit navn" value={name} onChange={e=>setName(e.target.value)} style={inp}
+            onKeyDown={e=>e.key==="Enter"&&handleJoin()}/>
+        </div>
+
+        <Btn onClick={handleJoin} disabled={loading||code.length!==6||!name.trim()} full style={{ padding:16, fontSize:14, letterSpacing:2 }}>
+          {loading ? "Søger…" : "Join gruppe →"}
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── SHARE SCREEN ──────────────────────────────────────────────────────────────
+function ShareScreen({ code, groupName, onContinue }) {
+  const [copied, setCopied] = useState(false);
+  const shareText = `Jeg har oprettet en LigaManager-gruppe! 🏆\n\nGruppe: ${groupName}\nKode: ${code}\n\nHent appen og join med koden — vi drafter inden sæsonstart! ⚽`;
+
+  function copy() {
+    navigator.clipboard?.writeText(shareText).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false), 2000); });
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, textAlign:"center" }}>
+      <div style={{ fontSize:48, marginBottom:16 }}>🎉</div>
+      <h2 style={{ fontWeight:900, fontSize:24, margin:"0 0 8px", letterSpacing:-0.5 }}>Gruppe oprettet!</h2>
+      <p style={{ color:C.g1, fontSize:14, marginBottom:32 }}>Del denne kode med dine venner</p>
+
+      {/* Code display */}
+      <div style={{ background:`linear-gradient(135deg,${C.blue}22,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:16, padding:"28px 40px", marginBottom:24, boxShadow:`0 0 40px ${C.blue}22` }}>
+        <div style={{ fontSize:11, letterSpacing:4, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
+        <div style={{ fontSize:48, fontWeight:900, letterSpacing:10, color:C.white }}>{code}</div>
+        <div style={{ fontSize:14, color:C.g1, marginTop:8 }}>{groupName}</div>
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:10, width:"100%", maxWidth:320 }}>
+        <Btn onClick={copy} full style={{ padding:14, fontSize:14, letterSpacing:1 }}>
+          {copied ? "✓ Kopieret!" : "📋 Kopiér besked til venner"}
+        </Btn>
+        <Btn variant="ghost" onClick={onContinue} full style={{ padding:14 }}>
+          Fortsæt til draft →
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── WAITING ROOM ─────────────────────────────────────────────────────────────
+function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
+  const isGameMaster = league.gameMaster === user?.name;
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    setRefreshing(true);
+    const g = await loadGroup(league.code);
+    if (g) onUpdate(g);
+    setTimeout(() => setRefreshing(false), 500);
+  }
+
+  // Auto-poll every 10 seconds
+  useEffect(() => {
+    const iv = setInterval(async () => {
+      const g = await loadGroup(league.code);
+      if (g) onUpdate(g);
+    }, 10000);
+    return () => clearInterval(iv);
+  }, [league.code]);
+
+  // If draft has started (another client started it), go to draft
+  useEffect(() => {
+    if (league.phase === "draft") onStartDraft();
+  }, [league.phase]);
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title="Venteværelse"/>
+      <div style={{ maxWidth:480, margin:"0 auto", padding:"24px 16px 48px" }}>
+
+        {/* Group info */}
+        <div style={{ background:`linear-gradient(135deg,${C.blue}18,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:20, marginBottom:20, textAlign:"center", boxShadow:`0 0 32px ${C.blue}22` }}>
+          <div style={{ fontSize:11, letterSpacing:4, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
+          <div style={{ fontSize:42, fontWeight:900, letterSpacing:8 }}>{league.code}</div>
+          <div style={{ color:C.g1, fontSize:13, marginTop:6 }}>{league.name}</div>
+        </div>
+
+        <div style={{ color:C.g1, fontSize:13, marginBottom:16, textAlign:"center" }}>
+          Del koden med dine venner — de joiner på <strong style={{ color:C.white }}>liga-manager-kzcg.vercel.app</strong>
+        </div>
+
+        {/* Players joined */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase" }}>
+              Tilmeldte ({league.players.length})
+            </div>
+            <button onClick={refresh} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:6, color:C.g1, cursor:"pointer", fontSize:11, padding:"4px 10px", fontWeight:600 }}>
+              {refreshing ? "…" : "↻ Opdater"}
+            </button>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {league.players.map((p, i) => (
+              <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, border:`1px solid ${p.name === league.gameMaster ? C.blue+"44" : C.border}`, borderRadius:10 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:p.name === league.gameMaster ? C.blue : C.border2, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:p.name === league.gameMaster ? "#000" : C.g1, flexShrink:0 }}>
+                  {p.name[0].toUpperCase()}
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, fontSize:15 }}>{p.name}</div>
+                  {p.name === league.gameMaster && <div style={{ fontSize:11, color:C.blue, fontWeight:700 }}>Game Master</div>}
+                </div>
+                <div style={{ color:C.green, fontSize:18 }}>✓</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Waiting animation */}
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"center", gap:6 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:C.blue, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite` }}/>
+            ))}
+          </div>
+          <style>{`@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
+          <div style={{ color:C.g1, fontSize:12, marginTop:10, letterSpacing:1 }}>Venter på flere spillere…</div>
+        </div>
+
+        {/* Start draft — only game master */}
+        {isGameMaster && (
+          <div>
+            <div style={{ borderTop:`1px solid ${C.border}`, marginBottom:20 }}/>
+            <div style={{ color:C.g1, fontSize:13, marginBottom:16, textAlign:"center" }}>
+              {league.players.length < 2
+                ? "Mindst 2 spillere skal være med før du kan starte"
+                : `${league.players.length} spillere klar — du kan starte draftet nu`}
+            </div>
+            <Btn
+              onClick={async () => {
+                const updated = { ...league, phase:"draft", draftOrder: buildOrder(league.players, league.draftMode) };
+                onUpdate(updated);
+                await saveGroup(league.code, updated);
+                onStartDraft();
+              }}
+              disabled={league.players.length < 2}
+              full
+              style={{ padding:16, fontSize:15, letterSpacing:2 }}
+            >
+              🚀 Start draft nu
+            </Btn>
+          </div>
+        )}
+
+        {!isGameMaster && (
+          <div style={{ textAlign:"center", color:C.g2, fontSize:12, letterSpacing:1 }}>
+            Venter på at game master starter draftet…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function App() {
+  const [screen, setScreen] = useState("loading");
+  const [league, setLeague] = useState(null);
+  const [user, setUser] = useState(null);
+  const [groupCode, setGroupCode] = useState(null);
+  const [shareCode, setShareCode] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  useEffect(() => {
+    loadUser().then(async u => {
+      if (u) {
+        setUser(u);
+        if (u.groupCode) {
+          const g = await loadGroup(u.groupCode);
+          if (g) { setLeague(g); setGroupCode(u.groupCode); setScreen("home"); return; }
+        }
+        setScreen("home");
+      } else {
+        setScreen("auth");
+      }
+    });
+  }, []);
+
+  // Poll Supabase every 15 seconds for updates from other players
+  useEffect(() => {
+    if (!groupCode) return;
+    const interval = setInterval(async () => {
+      const g = await loadGroup(groupCode);
+      if (g) { setLeague(g); setLastUpdated(new Date()); }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [groupCode]);
+
+  async function persistGroup(code, data) {
+    setLeague(data);
+    await saveGroup(code, data);
+  }
+
+  async function update(patch) {
+    const updated = { ...league, ...patch };
+    setLeague(updated);
+    await saveGroup(groupCode, updated);
+  }
+
+  function handleAuth(u) {
+    setUser(u);
+    saveUser(u);
+    setScreen("home");
+  }
+
+  function handleLogout() {
+    setUser(null);
+    setLeague(null);
+    setGroupCode(null);
+    saveUser(null);
+    setScreen("auth");
+  }
+
+  async function handleCreateGroup(leagueData) {
+    const code = genCode();
+    const withCode = { ...leagueData, code, phase: "waiting", gameMaster: user?.name || "Game Master" };
+    setGroupCode(code);
+    await persistGroup(code, withCode);
+    const updatedUser = { ...user, groupCode: code };
+    setUser(updatedUser);
+    await saveUser(updatedUser);
+    setShareCode(code);
+    setLeague(withCode);
+    setScreen("share");
+  }
+
+  async function handleJoin(code, group, playerName) {
+    // Add player if not already in
+    let updatedGroup = { ...group };
+    const alreadyIn = group.players.some(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (!alreadyIn) {
+      const newPlayer = { id: `p${group.players.length}`, name: playerName };
+      updatedGroup = {
+        ...group,
+        players: [...group.players, newPlayer],
+        picks: { ...group.picks, [newPlayer.id]: {} },
+        draftOrder: buildOrder([...group.players, newPlayer], group.draftMode),
+      };
+      await saveGroup(code, updatedGroup);
+    }
+    setGroupCode(code);
+    setLeague(updatedGroup);
+    const updatedUser = { ...user, groupCode: code, name: playerName };
+    setUser(updatedUser);
+    await saveUser(updatedUser);
+    const dest = updatedGroup.phase === "waiting" ? "waiting" : updatedGroup.phase === "draft" ? "draft" : "league";
+    setScreen(dest);
+  }
+
+  function makeDemo() {
+    const players = [
+      {id:"p0",name:"Sæfik"}, {id:"p1",name:"Jonas"}, {id:"p2",name:"Mikkel"}, {id:"p3",name:"Rasmus"},
+      {id:"p4",name:"Oliver"},{id:"p5",name:"Emma"},   {id:"p6",name:"Lukas"},  {id:"p7",name:"Ida"},
+    ];
+    const weeklyRanks = [
+      [  3,   2,   1,   1,   2,   1,   1,   2,   1,   1,   2,   1,   1,   2,   1,   1,   1,   2,   1 ],
+      [  1,   1,   2,   3,   1,   2,   3,   1,   2,   3,   1,   2,   3,   1,   2,   3,   2,   1,   3 ],
+      [  5,   4,   3,   2,   3,   3,   2,   3,   3,   2,   3,   3,   2,   3,   3,   2,   3,   3,   2 ],
+      [  2,   3,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4 ],
+      [  4,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5 ],
+      [  8,   8,   8,   7,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6,   6 ],
+      [  6,   6,   6,   6,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7,   7 ],
+      [  7,   7,   7,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8,   8 ],
+    ];
+    const history = weeklyRanks[0].map((_,wi) => players.map((p,pi) => ({id:p.id, rank:weeklyRanks[pi][wi]})));
+    return {
+      code:"DEMO26", name:"Drengegruppen 26/27", players, draftMode:"snake", asyncMode:true,
+      draftOrder:[], draftIdx:40, phase:"season", tier:"semipro",
+      activeLeagues:["PL","LL","BL","SA","L1"],
+      picks:{
+        p0:{ PL:"Arsenal",     LL:"Barcelona",       BL:"Bayern Munich",      SA:"Inter Milan", L1:"PSG" },
+        p1:{ PL:"Man City",    LL:"Real Madrid",     BL:"Bayer Leverkusen",   SA:"Napoli",      L1:"Lens" },
+        p2:{ PL:"Liverpool",   LL:"Atlético Madrid", BL:"Borussia Dortmund",  SA:"Roma",        L1:"Marseille" },
+        p3:{ PL:"Spurs",       LL:"Villarreal",      BL:"RB Leipzig",         SA:"AC Milan",    L1:"Monaco" },
+        p4:{ PL:"Newcastle",   LL:"Real Sociedad",   BL:"Freiburg",           SA:"Fiorentina",  L1:"Rennes" },
+        p5:{ PL:"Brighton",    LL:"Athletic Bilbao", BL:"Eintracht Frankfurt",SA:"Lazio",       L1:"Nice" },
+        p6:{ PL:"Aston Villa", LL:"Osasuna",         BL:"Hoffenheim",         SA:"Bologna",     L1:"Lyon" },
+        p7:{ PL:"Chelsea",     LL:"Getafe",          BL:"Augsburg",           SA:"Torino",      L1:"Strasbourg" },
+      },
+      standings: STANDINGS_2526, history,
+    };
+  }
+
+  if (screen === "loading") return (
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"'Inter',sans-serif" }}>
+      <div style={{ width:36, height:36, border:`3px solid ${C.border2}`, borderTop:`3px solid ${C.blue}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  return <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    {screen==="auth"    && <AuthScreen   onAuth={handleAuth} onDemo={async()=>{ const d=makeDemo(); setLeague(d); setGroupCode("DEMO26"); setUser({name:"Sæfik",tier:"semipro",groupCode:"DEMO26"}); setScreen("league"); }}/>}
+    {screen==="home"    && <HomeScreen   saved={league} user={user} onNew={()=>setScreen("setup")} onJoin={()=>setScreen(league?.phase==="waiting"?"waiting":league?.phase==="draft"?"draft":"league")} onLogout={handleLogout} onJoinGroup={()=>setScreen("join")}/>}
+    {screen==="setup"   && <SetupScreen  onBack={()=>setScreen("home")} onStart={handleCreateGroup}/>}
+    {screen==="share"   && <ShareScreen  code={shareCode} groupName={league?.name} onContinue={()=>setScreen("waiting")}/>}
+    {screen==="join"    && <JoinScreen   onBack={()=>setScreen("home")} onJoin={handleJoin}/>}
+    {screen==="waiting" && league && <WaitingRoom league={league} user={user} onStartDraft={()=>setScreen("draft")} onUpdate={l=>{ setLeague(l); }}/>}
+    {screen==="draft"   && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")}/>}
+    {screen==="league"  && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")}/>}
+  </>;
+}
+const { useState, useEffect } = React;
+
+
+// Tier system
+const TIERS = {
+  amateur: { name: "Amateur",  price: 0,   maxLeagues: 5,  sidegames: 0, color: "#888" },
+  semipro: { name: "Semi-Pro", price: 60,  maxLeagues: 10, sidegames: 2, color: "#00A8FF" },
+  pro:     { name: "Pro",      price: 120, maxLeagues: 15, sidegames: 5, color: "#FFD700" },
+};
+
+const LEAGUES = {
+  // Tier 1 — always included in Amateur
+  PL:  { name: "Premier League",     flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", color: "#3d195b", accent: "#00ff85", tier: 1, logo: "https://www.thesportsdb.com/images/media/league/badge/uwwv951549810496.png" },
+  LL:  { name: "La Liga",            flag: "🇪🇸", color: "#1a1a2e", accent: "#f5a623", tier: 1, logo: "https://www.thesportsdb.com/images/media/league/badge/7onmyv1549532253.png" },
+  BL:  { name: "Bundesliga",         flag: "🇩🇪", color: "#1a0a0a", accent: "#ff4d6d", tier: 1, logo: "https://www.thesportsdb.com/images/media/league/badge/0j55yv1534764799.png" },
+  SA:  { name: "Serie A",            flag: "🇮🇹", color: "#0a1628", accent: "#00A8FF", tier: 1, logo: "https://www.thesportsdb.com/images/media/league/badge/99tc5s1549624616.png" },
+  L1:  { name: "Ligue 1",            flag: "🇫🇷", color: "#0d1b2a", accent: "#aac8ff", tier: 1, logo: "https://www.thesportsdb.com/images/media/league/badge/32qsnh1549623584.png" },
+  // Tier 2 — unlocked in Semi-Pro (pick any 5 extra)
+  NL:  { name: "Eredivisie",         flag: "🇳🇱", color: "#1a0d00", accent: "#ff6b00", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/97859j1534768094.png" },
+  TR:  { name: "Süper Lig",          flag: "🇹🇷", color: "#1a0008", accent: "#e30a17", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/llz2v71534769323.png" },
+  DK:  { name: "Superliga",          flag: "🇩🇰", color: "#0a001a", accent: "#c8102e", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/0wyq9r1534768637.png" },
+  SC:  { name: "Scottish Prem.",     flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", color: "#001a0d", accent: "#005eb8", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/plwcc01534768768.png" },
+  PT:  { name: "Primeira Liga",      flag: "🇵🇹", color: "#0d1a0a", accent: "#009246", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/3pfr5h1534769013.png" },
+  CH:  { name: "Championship",       flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", color: "#0a1a1a", accent: "#6caddf", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/tmhnts1549623859.png" },
+  BE:  { name: "Pro League",         flag: "🇧🇪", color: "#1a0a00", accent: "#f4e342", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/r03k3v1534768460.png" },
+  AT:  { name: "Bundesliga (AUT)",   flag: "🇦🇹", color: "#1a0000", accent: "#ed2939", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/p5m0891534769476.png" },
+  EK:  { name: "Ekstraklasa",        flag: "🇵🇱", color: "#001a0a", accent: "#dc143c", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/llthpq1534768914.png" },
+  BL2: { name: "2. Bundesliga",      flag: "🇩🇪", color: "#0a0a1a", accent: "#ff9d00", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/tvtrtv1534768084.png" },
+  SW:  { name: "Swiss Super League", flag: "🇨🇭", color: "#1a0000", accent: "#ff0000", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/qywss01534769532.png" },
+  IE:  { name: "League of Ireland",  flag: "🇮🇪", color: "#001a08", accent: "#169b62", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/wv8nqo1548681354.png" },
+  DK1: { name: "1. Division (DK)",   flag: "🇩🇰", color: "#0a001a", accent: "#e8001c", tier: 2, logo: "https://www.thesportsdb.com/images/media/league/badge/0wyq9r1534768637.png" },
+};
+
+const TEAMS = {
+  PL:  ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Coventry","Crystal Palace","Everton","Fulham","Hull City","Ipswich","Leicester","Liverpool","Man City","Man United","Newcastle","Nottm Forest","Spurs","Sunderland"],
+  LL:  ["Alavés","Athletic Bilbao","Atlético Madrid","Barcelona","Celta Vigo","Deportivo La Coruña","Elche","Espanyol","Getafe","Levante","Osasuna","Racing Santander","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Villarreal"],
+  BL:  ["Augsburg","Bayer Leverkusen","Bayern Munich","Borussia Dortmund","Eintracht Frankfurt","Elversberg","Freiburg","Hoffenheim","Köln","Mainz","Mönchengladbach","Paderborn","RB Leipzig","Schalke 04","Stuttgart","Union Berlin","Werder Bremen"],
+  SA:  ["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Frosinone","Genoa","Inter Milan","Juventus","Lazio","Lecce","Monza","Napoli","Roma","Sassuolo","Torino","Udinese","Venezia"],
+  L1:  ["Angers","Auxerre","Brest","Le Havre","Le Mans","Lens","Lille","Lorient","Lyon","Marseille","Monaco","Nice","PSG","Rennes","Strasbourg","Toulouse","Troyes"],
+  NL:  ["ADO Den Haag","Ajax","AZ","Cambuur","Excelsior","FC Groningen","FC Utrecht","Feyenoord","Go Ahead Eagles","NEC","PEC Zwolle","PSV Eindhoven","RKC Waalwijk","Sparta Rotterdam","Twente","Willem II"],
+  TR:  ["Adana Demirspor","Alanyaspor","Amedspor","Beşiktaş","Çorum FK","Erzurumspor","Fenerbahçe","Galatasaray","Gaziantep","İstanbul Başakşehir","Kasımpaşa","Kocaelispor","Rizespor","Sivasspor","Trabzonspor","Samsunspor","Eyüpspor","Göztepe"],
+  DK:  ["AGF","Brøndby","FC Copenhagen","AC Horsens","Lyngby","Midtjylland","Nordsjælland","OB Odense","Randers","Silkeborg","Sønderjyske","Viborg"],
+  SC:  ["Aberdeen","Celtic","Dundee","Dundee United","Falkirk","Heart of Midlothian","Hibernian","Kilmarnock","Motherwell","Rangers","St Johnstone","St Mirren"],
+  PT:  ["Académico de Viseu","Alverca","Arouca","Benfica","Braga","Casa Pia","Estoril Praia","Estrela da Amadora","Gil Vicente","Marítimo","Moreirense","Nacional","Porto","Rio Ave","Santa Clara","Sporting CP","Vitória SC"],
+  CH:  ["Birmingham City","Blackburn Rovers","Bolton Wanderers","Bristol City","Burnley","Cardiff City","Charlton Athletic","Derby County","Lincoln City","Middlesbrough","Millwall","Norwich City","Portsmouth","Preston North End","QPR","Sheffield United","Southampton","Stoke City","Swansea City","Watford","West Brom","West Ham United","Wolves","Wrexham"],
+  BE:  ["Anderlecht","Bruges","Cercle Brugge","Charleroi","Gent","Kortrijk","Mechelen","Mouscron","OHL","Sint-Truiden","Standard Liège","Westerlo","Beveren","Beerschot","Genk","Lommel","Antwerp","Dender"],
+  AT:  ["Austria Wien","LASK","Rapid Wien","Red Bull Salzburg","Sturm Graz","Wolfsberg","Hartberg","Klagenfurt","Ried","Blau-Weiß Linz","Austria Klagenfurt","Altach"],
+  EK:  ["Cracovia","Górnik Zabrze","Jagiellonia","Lech Poznań","Lechia Gdańsk","Legia Warszawa","Piast Gliwice","Pogoń Szczecin","Radomiak","Raków","Ruch Chorzów","Śląsk Wrocław","Stal Mielec","Warta Poznań","Zagłębie Lubin","Widzew Łódź"],
+  BL2: ["Arminia Bielefeld","Eintracht Braunschweig","Fortuna Düsseldorf","Greuther Fürth","Hamburg","Hannover 96","Hertha BSC","Kaiserslautern","Karlsruher SC","Magdeburg","Nürnberg","Osnabrück","Preußen Münster","SpVgg Greuther Fürth","SSV Ulm","VfL Bochum","Energie Cottbus"],
+  SW:  ["Basel","Grasshoppers","Lausanne-Sport","Luzern","Servette","Sion","St. Gallen","Winterthur","YB (Young Boys)","Lugano"],
+  IE:  ["Bohemians","Cork City","Derry City","Drogheda United","Dundalk","Finn Harps","Galway United","Longford Town","Shamrock Rovers","Shelbourne","Sligo Rovers","St Patrick's Athletic","Treaty United","UCD","Waterford"],
+  DK1: ["AB","AaB","Aarhus Fremad","Esbjerg fB","FC Fredericia","HB Køge","Hillerød Fodbold","Hobro IK","Hvidovre IF","Kolding IF","Vejle Boldklub","Vendsyssel FF"],
+};
+
+const LEAGUE_IDS = Object.keys(LEAGUES);
+const AMATEUR_LEAGUES = LEAGUE_IDS.filter(id => LEAGUES[id].tier === 1); // locked set
+const TIER_AVAILABLE = {
+  amateur: AMATEUR_LEAGUES,      // fixed 5, cannot change
+  semipro: LEAGUE_IDS,           // pick any 10 from all 17
+  pro:     LEAGUE_IDS,           // pick any 15 from all 17
+};
+
+const STANDINGS_2526 = {
+  PL: ["Arsenal","Man City","Man United","Aston Villa","Liverpool","Bournemouth","Sunderland","Brighton","Brentford","Chelsea","Fulham","Newcastle","Everton","Leeds","Crystal Palace","Nottm Forest","Spurs","West Ham","Burnley","Wolves"],
+  LL: ["Barcelona","Real Madrid","Villarreal","Atlético Madrid","Real Betis","Celta Vigo","Real Sociedad","Getafe","Sevilla","Rayo Vallecano","Osasuna","Athletic Bilbao","Alavés","Espanyol","Valencia","Levante","Elche","Mallorca","Girona","Oviedo"],
+  BL: ["Bayern Munich","Bayer Leverkusen","Borussia Dortmund","RB Leipzig","Stuttgart","Eintracht Frankfurt","Freiburg","Hoffenheim","Augsburg","Union Berlin","Mönchengladbach","Mainz","Köln","Werder Bremen","St. Pauli","Heidenheim","Wolfsburg"],
+  SA: ["Inter Milan","Napoli","Roma","Como","AC Milan","Juventus","Atalanta","Fiorentina","Lazio","Bologna","Torino","Udinese","Genoa","Cagliari","Lecce","Empoli","Sassuolo","Monza","Pisa","Hellas Verona","Cremonese"],
+  L1: ["PSG","Lens","Lille","Lyon","Marseille","Rennes","Monaco","Brest","Nice","Strasbourg","Toulouse","Angers","Auxerre","Le Havre","Lorient","Montpellier","Metz","Nantes"],
+};
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPA_URL = "https://nvcrqiybutnededxsbtq.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52Y3JxaXlidXRuZWRlZHhzYnRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODU5NTksImV4cCI6MjEwMDQ2MTk1OX0.D_BXqaJPvbV8XO65DASAiPn9-fqJzxtU_0VV1AdL0vQ";
+
+const supa = {
+  async query(path, opts = {}) {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+      headers: {
+        "apikey": SUPA_KEY,
+        "Authorization": `Bearer ${SUPA_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": opts.prefer || "return=representation",
+      },
+      ...opts,
+    });
+    if (!res.ok) { const e = await res.text(); console.error("Supabase error:", e); return null; }
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  },
+};
+
+async function loadUser() {
+  try {
+    const raw = localStorage.getItem("ligamanager-user-v1");
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+async function saveUser(u) {
+  try {
+    if (u) localStorage.setItem("ligamanager-user-v1", JSON.stringify(u));
+    else localStorage.removeItem("ligamanager-user-v1");
+  } catch(e) { console.error(e); }
+}
+
+async function loadGroup(code) {
+  try {
+    const rows = await supa.query(`groups?code=eq.${code}&select=data`, { method: "GET" });
+    return rows && rows.length > 0 ? rows[0].data : null;
+  } catch(e) { console.error(e); return null; }
+}
+
+async function saveGroup(code, data) {
+  try {
+    // Upsert — insert or update
+    await supa.query("groups", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      headers: {
+        "apikey": SUPA_KEY,
+        "Authorization": `Bearer ${SUPA_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=representation",
+      },
+      body: JSON.stringify({ code, data, updated_at: new Date().toISOString() }),
+    });
+  } catch(e) { console.error(e); }
+}
+
+function genCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+function shuffle(arr) { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function buildOrder(players, mode) {
+  if (mode==="random") return shuffle(players.map(p=>p.id));
+  if (mode==="manual") return players.map(p=>p.id);
+  const ids = players.map(p=>p.id);
+  const out = [];
+  for(let r=0;r<LEAGUE_IDS.length;r++) out.push(...(r%2===0?ids:[...ids].reverse()));
+  return out;
+}
+
+function calcPoints(picks, standings, activeLeagues) {
+  return (activeLeagues || LEAGUE_IDS).reduce((sum, lid) => {
+    const pos = (standings[lid]||[]).indexOf(picks[lid]);
+    return sum + (pos !== -1 ? pos+1 : 0);
+  }, 0);
+}
+
+function isDraftDone(players, picks, activeLeagues) {
+  return players.every(p => (activeLeagues || LEAGUE_IDS).every(lid => picks[p.id]?.[lid]));
+}
+
+// Design tokens
+const C = {
+  bg: "#080808", surface: "#111", card: "#141414", border: "#1e1e1e", border2: "#2a2a2a",
+  blue: "#00A8FF", blueD: "#00A8FF22", gold: "#FFD700", green: "#00ff85",
+  white: "#ffffff", g1: "#888", g2: "#444",
+};
+
+const GLOW_STYLE = (color) => ({ boxShadow: `0 0 32px ${color}33` });
+
+function NavBar({ title, onBack, right }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, background:C.bg, zIndex:10 }}>
+      {onBack
+        ? <button onClick={onBack} style={{ background:"none", border:"none", color:C.g1, cursor:"pointer", fontSize:12, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" }}>← Tilbage</button>
+        : <div style={{width:60}}/>}
+      <span style={{ fontWeight:900, fontSize:12, letterSpacing:3, textTransform:"uppercase" }}>{title}</span>
+      <div style={{width:60, display:"flex", justifyContent:"flex-end"}}>{right}</div>
+    </div>
+  );
+}
+
+function Btn({ onClick, children, variant="primary", disabled, full, style:sx={} }) {
+  const v = {
+    primary: { background:C.blue, color:"#000", border:"none" },
+    ghost:   { background:"transparent", color:C.white, border:`1px solid ${C.border2}` },
+    dim:     { background:C.card, color:C.g1, border:`1px solid ${C.border}` },
+  }[variant];
+  return (
+    <button onClick={disabled?undefined:onClick} style={{ ...v, borderRadius:6, padding:"13px 18px", fontSize:13, fontWeight:800, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, width:full?"100%":undefined, letterSpacing:1, textTransform:"uppercase", fontFamily:"inherit", transition:"opacity .15s", ...sx }}>
+      {children}
+    </button>
+  );
+}
+
+function Card({ children, glow, color, style:sx={} }) {
+  return (
+    <div style={{ background:C.card, border:`1px solid ${glow?(color||C.blue)+"55":C.border}`, borderRadius:12, padding:16, ...(glow?GLOW_STYLE(color||C.blue):{}), ...sx }}>
+      {children}
+    </div>
+  );
+}
+
+function Label({ children }) {
+  return <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase", marginBottom:10 }}>{children}</div>;
+}
+
+function ProgressBar({ value }) {
+  return (
+    <div style={{ height:3, background:C.border2, borderRadius:2, overflow:"hidden" }}>
+      <div style={{ height:"100%", width:`${Math.min(value,1)*100}%`, background:`linear-gradient(90deg,${C.blue},${C.green})`, borderRadius:2, transition:"width .4s" }}/>
+    </div>
+  );
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user }) {
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", paddingBottom:40 }}>
+      {/* User bar */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ fontSize:12, color:C.g1 }}>
+          👋 <span style={{ color:C.white, fontWeight:700 }}>{user?.name || "Bruger"}</span>
+          <span style={{ marginLeft:8, fontSize:10, background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:4, padding:"2px 7px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>
+            {user?.tier || "Amateur"}
+          </span>
+        </div>
+        <button onClick={onLogout} style={{ background:"none", border:"none", color:C.g2, cursor:"pointer", fontSize:12, fontWeight:600, letterSpacing:1 }}>Log ud</button>
+      </div>
+
+      {/* Hero */}
+      <div style={{ position:"relative", overflow:"hidden", padding:"60px 24px 44px", textAlign:"center" }}>
+        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.blue}07 40px,${C.blue}07 41px)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.blue}20 0%,transparent 65%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"relative" }}>
+          <div style={{ fontSize:10, letterSpacing:6, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:14 }}>Fantasy Football</div>
+          <h1 style={{ margin:"0 0 4px", fontSize:54, fontWeight:900, letterSpacing:-2, lineHeight:1 }}>
+            LIGA<span style={{ color:C.blue }}>MANAGER</span>
+          </h1>
+          <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:14 }}>Vælg hold · Følg ligaer · Vind med færrest point</p>
+        </div>
+      </div>
+
+      <div style={{ maxWidth:520, margin:"0 auto", padding:"0 16px" }}>
+        {saved && (
+          <div onClick={onJoin} style={{ background:`linear-gradient(135deg,${C.blue}18,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:20, marginBottom:14, cursor:"pointer", ...GLOW_STYLE(C.blue) }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Aktiv gruppe</div>
+            <div style={{ fontWeight:900, fontSize:22, letterSpacing:-0.5 }}>{saved.name}</div>
+            <div style={{ color:C.g1, fontSize:13, marginTop:4, marginBottom:14 }}>
+              {saved.players.length} spillere · {saved.phase==="draft"?"Draft igangværende":"Sæson aktiv"}
+            </div>
+            <div style={{ color:C.blue, fontWeight:800, fontSize:12, letterSpacing:1.5, textTransform:"uppercase" }}>Fortsæt →</div>
+          </div>
+        )}
+
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:32 }}>
+          <Btn onClick={onNew} full sx={{ padding:"16px 18px", fontSize:14, letterSpacing:2 }}>+ Opret ny gruppe</Btn>
+          <Btn variant="ghost" onClick={onJoinGroup} full>🔗 Join eksisterende gruppe</Btn>
+        </div>
+
+        {/* Tier overview */}
+        {Object.entries(TIERS).map(([key, t]) => {
+          const showcaseLeagues = key === "amateur"
+            ? LEAGUE_IDS.filter(lid => LEAGUES[lid].tier === 1)
+            : LEAGUE_IDS.filter(lid => LEAGUES[lid].tier === 2).slice(0, 4);
+          return (
+            <div key={key} style={{ marginBottom:20 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                <span style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:t.color, textTransform:"uppercase" }}>{t.name}</span>
+                <span style={{ fontSize:11, color:C.g2 }}>{t.price === 0 ? "Gratis" : `${t.price} kr/spiller`} · {key === "amateur" ? "5 faste ligaer" : `Vælg frit op til ${t.maxLeagues} ligaer`}</span>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+                {showcaseLeagues.map(lid => {
+                  const l = LEAGUES[lid];
+                  return (
+                    <div key={lid} style={{ background:`linear-gradient(135deg,${l.color},${C.card})`, border:`1px solid ${l.accent}33`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <div>
+                        <div style={{ fontSize:18, marginBottom:3 }}>{l.flag}</div>
+                        <div style={{ fontWeight:700, fontSize:11, color:l.accent }}>{l.name}</div>
+                      </div>
+                      <img src={l.logo} alt={l.name} style={{ width:32, height:32, objectFit:"contain", opacity:.9 }} onError={e=>e.target.style.display="none"}/>
+                    </div>
+                  );
+                })}
+                {key !== "amateur" && (
+                  <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:4 }}>
+                    <div style={{ fontSize:18, color:t.color, fontWeight:900 }}>+{t.maxLeagues - 5}</div>
+                    <div style={{ fontSize:10, color:C.g2, fontWeight:800, letterSpacing:1 }}>VALGFRIE</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+function SetupScreen({ onStart, onBack }) {
+  const [name, setName] = useState("Min Gruppe 26/27");
+  const [players, setPlayers] = useState(["","","",""]);
+  const [draftMode, setDraftMode] = useState("random");
+  const [asyncMode, setAsyncMode] = useState(true);
+  const [tier, setTier] = useState("amateur");
+  const [selectedLeagues, setSelectedLeagues] = useState([...AMATEUR_LEAGUES]);
+
+  const validPlayers = players.filter(n=>n.trim());
+  const canStart = name.trim() && validPlayers.length >= 2 && selectedLeagues.length >= 2;
+  const availableLeagues = TIER_AVAILABLE[tier];
+  const maxLeagues = TIERS[tier].maxLeagues;
+  const isAmateur = tier === "amateur";
+
+  function toggleLeague(lid) {
+    if (isAmateur) return; // Amateur locked
+    if (selectedLeagues.includes(lid)) {
+      if (selectedLeagues.length > 2) setSelectedLeagues(selectedLeagues.filter(l => l !== lid));
+    } else {
+      if (selectedLeagues.length < maxLeagues) setSelectedLeagues([...selectedLeagues, lid]);
+    }
+  }
+
+  function changeTier(key) {
+    setTier(key);
+    if (key === "amateur") setSelectedLeagues([...AMATEUR_LEAGUES]);
+    else setSelectedLeagues([...AMATEUR_LEAGUES]); // start with top 5 pre-selected
+  }
+
+  function handleStart() {
+    const ps = validPlayers.map((n,i)=>({id:`p${i}`,name:n.trim()}));
+    onStart({ name:name.trim(), players:ps, draftMode, asyncMode, tier,
+      activeLeagues: selectedLeagues,
+      draftOrder:buildOrder(ps,draftMode),
+      picks:Object.fromEntries(ps.map(p=>[p.id,{}])),
+      standings:Object.fromEntries(selectedLeagues.map(lid=>[lid,[...TEAMS[lid]]])),
+      draftIdx:0, phase:"draft" });
+  }
+
+  const inp = { background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:6, color:C.white, padding:"12px 14px", fontSize:14, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
+  const lbl = { fontSize:10, letterSpacing:3, color:C.g1, fontWeight:800, textTransform:"uppercase", display:"block", marginBottom:10 };
+
+  function handleStart() {
+    const ps = validPlayers.map((n,i)=>({id:`p${i}`,name:n.trim()}));
+    onStart({ name:name.trim(), players:ps, draftMode, asyncMode, tier,
+      activeLeagues: selectedLeagues,
+      draftOrder:buildOrder(ps,draftMode),
+      picks:Object.fromEntries(ps.map(p=>[p.id,{}])),
+      standings:Object.fromEntries(selectedLeagues.map(lid=>[lid,[...TEAMS[lid]]])),
+      draftIdx:0, phase:"draft" });
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title="Opret gruppe" onBack={onBack}/>
+      <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 48px" }}>
+
+        {/* Tier picker */}
+        <div style={{ marginBottom:24 }}>
+          <label style={lbl}>Niveau</label>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {Object.entries(TIERS).map(([key, t]) => (
+              <div key={key} onClick={()=>changeTier(key)} style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px", background:tier===key?t.color+"15":C.card, border:`1px solid ${tier===key?t.color+"66":C.border}`, borderRadius:8, cursor:"pointer" }}>
+                <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${tier===key?t.color:C.g2}`, background:tier===key?t.color:"transparent", flexShrink:0 }}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:800, fontSize:14, color:tier===key?t.color:C.white }}>{t.name}</div>
+                  <div style={{ color:C.g1, fontSize:12 }}>{t.price === 0 ? "Gratis" : `${t.price} kr/spiller`} · Op til {t.maxLeagues} ligaer · {t.sidegames} sidespil</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* League selector */}
+        <div style={{ marginBottom:24 }}>
+          <label style={lbl}>
+            {isAmateur ? "Inkluderede ligaer (låst)" : `Vælg ligaer (${selectedLeagues.length}/${maxLeagues})`}
+          </label>
+          {isAmateur && <div style={{ fontSize:12, color:C.g1, marginBottom:10 }}>Amateur inkluderer altid de 5 store europæiske ligaer.</div>}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {availableLeagues.map(lid => {
+              const l = LEAGUES[lid];
+              const active = selectedLeagues.includes(lid);
+              const locked = !active && selectedLeagues.length >= maxLeagues;
+              return (
+                <div key={lid} onClick={() => !isAmateur && !locked && toggleLeague(lid)} style={{ padding:"12px 14px", borderRadius:10, cursor:isAmateur?"default":locked?"not-allowed":"pointer", background:active?l.color:C.card, border:`1px solid ${active?l.accent+"88":C.border}`, opacity:locked?.4:1, transition:"all .15s", position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <div>
+                    <div style={{ fontSize:22, marginBottom:4 }}>{l.flag}</div>
+                    <div style={{ fontSize:12, fontWeight:800, color:active?l.accent:C.white }}>{l.name}</div>
+                  </div>
+                  <img src={l.logo} alt={l.name} style={{ width:34, height:34, objectFit:"contain", opacity:active?.95:.5, flexShrink:0 }} onError={e=>e.target.style.display="none"}/>
+                  {active && !isAmateur && <div style={{ position:"absolute", top:6, right:6, color:C.green, fontSize:12, fontWeight:900, background:C.bg+"cc", borderRadius:"50%", width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center" }}>✓</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ marginBottom:24 }}>
+          <label style={lbl}>Gruppe-navn</label>
+          <input value={name} onChange={e=>setName(e.target.value)} style={inp}/>
+        </div>
+
+        <div style={{ marginBottom:24 }}>
+          <label style={lbl}>Spillere ({validPlayers.length}/12)</label>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {players.map((n,i)=>(
+              <div key={i} style={{ display:"flex", gap:8 }}>
+                <input placeholder={`Spiller ${i+1}`} value={n} onChange={e=>{const a=[...players];a[i]=e.target.value;setPlayers(a);}} style={{...inp,flex:1}}/>
+                {players.length>2&&<button onClick={()=>{const a=[...players];a.splice(i,1);setPlayers(a);}} style={{ background:"#ff4d6d11", border:"1px solid #ff4d6d44", color:"#ff4d6d", borderRadius:6, width:42, cursor:"pointer", fontSize:18, fontWeight:700 }}>×</button>}
+              </div>
+            ))}
+          </div>
+          {players.length<12&&<button onClick={()=>setPlayers([...players,""])} style={{ marginTop:10, background:"none", border:`1px dashed ${C.border2}`, borderRadius:6, color:C.g1, padding:10, width:"100%", cursor:"pointer", fontSize:13, fontWeight:600 }}>+ Tilføj spiller</button>}
+        </div>
+
+        <div style={{ marginBottom:24 }}>
+          <label style={lbl}>Draft-rækkefølge</label>
+          {[{id:"random",icon:"🎲",label:"Tilfældig",desc:"Systemet trækker lod"},{id:"manual",icon:"📋",label:"Manuel",desc:"Rækkefølge som indtastet"},{id:"snake",icon:"🐍",label:"Snake",desc:"Skiftende retning per runde"}].map(o=>(
+            <div key={o.id} onClick={()=>setDraftMode(o.id)} style={{ display:"flex", alignItems:"center", gap:14, padding:"13px 16px", background:draftMode===o.id?C.blue+"15":C.card, border:`1px solid ${draftMode===o.id?C.blue+"66":C.border}`, borderRadius:8, marginBottom:8, cursor:"pointer" }}>
+              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${draftMode===o.id?C.blue:C.g2}`, background:draftMode===o.id?C.blue:"transparent", flexShrink:0 }}/>
+              <div style={{ fontSize:20 }}>{o.icon}</div>
+              <div><div style={{ fontWeight:700, fontSize:14 }}>{o.label}</div><div style={{ color:C.g1, fontSize:12 }}>{o.desc}</div></div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginBottom:32 }}>
+          <label style={lbl}>Draft-mode</label>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {[{id:false,icon:"🏠",label:"Live",desc:"Alle samlet"},{id:true,icon:"📱",label:"Async",desc:"Hver for sig"}].map(o=>(
+              <div key={String(o.id)} onClick={()=>setAsyncMode(o.id)} style={{ padding:"14px 12px", textAlign:"center", borderRadius:8, cursor:"pointer", background:asyncMode===o.id?C.blue+"15":C.card, border:`1px solid ${asyncMode===o.id?C.blue+"66":C.border}` }}>
+                <div style={{ fontSize:26, marginBottom:6 }}>{o.icon}</div>
+                <div style={{ fontWeight:800, fontSize:14, color:asyncMode===o.id?C.blue:C.white }}>{o.label}</div>
+                <div style={{ color:C.g1, fontSize:11, marginTop:2 }}>{o.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Btn onClick={handleStart} disabled={!canStart} full sx={{ padding:16, fontSize:14, letterSpacing:2 }}>Start draft →</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── DRAFT ─────────────────────────────────────────────────────────────────────
+function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
+  const [selLeague, setSelLeague] = useState(null);
+  const [viewAs, setViewAs] = useState(null);
+  const { draftOrder, draftIdx, picks, players, standings, activeLeagues = LEAGUE_IDS } = league;
+  const curId = draftOrder[draftIdx];
+  const curPicker = players.find(p=>p.id===curId);
+  const pickedL = Object.keys(picks[curId]||{});
+  const remainL = activeLeagues.filter(lid=>!pickedL.includes(lid));
+  const taken = Object.fromEntries(activeLeagues.map(lid=>[lid,players.map(p=>picks[p.id]?.[lid]).filter(Boolean)]));
+  const total = activeLeagues.length * players.length;
+  const dispPlayer = viewAs ? players.find(p=>p.id===viewAs) : curPicker;
+
+  const [justPicked, setJustPicked] = useState(null); // { nextPlayer, team, league }
+
+  function pick(lid, team) {
+    const np = { ...picks, [curId]: { ...(picks[curId]||{}), [lid]:team } };
+    const done = isDraftDone(players, np, activeLeagues);
+    const newIdx = draftIdx + 1;
+    const nextPickerId = done ? null : draftOrder[newIdx];
+    const nextPlayer = done ? null : players.find(p => p.id === nextPickerId);
+    onUpdate({ picks:np, draftIdx:newIdx, phase:done?"season":"draft" });
+    setSelLeague(null);
+    if (done) { onFinish(); return; }
+    if (nextPlayer) setJustPicked({ nextPlayer, team, leagueName: LEAGUES[lid].name });
+  }
+
+  function sendWhatsApp() {
+    if (!justPicked) return;
+    const url = `https://liga-manager-kzcg.vercel.app`;
+    const msg = `⚽ LigaManager — Det er din tur!\n\n${justPicked.nextPlayer.name}, du skal nu vælge dit næste hold.\n\nGruppe: ${league.name}\n\nÅbn appen og vælg: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+    setJustPicked(null);
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+      <NavBar title="Draft" onBack={onLeague} right={<button onClick={onLeague} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Oversigt</button>}/>
+      <div style={{ maxWidth:520, margin:"0 auto", padding:"20px 16px 48px" }}>
+
+        <div style={{ marginBottom:20 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+            <span style={{ fontSize:11, color:C.g1, letterSpacing:2, textTransform:"uppercase" }}>{league.name}</span>
+            <span style={{ fontSize:11, color:C.g1 }}>{draftIdx}/{total}</span>
+          </div>
+          <ProgressBar value={draftIdx/total}/>
+        </div>
+
+        {/* Current picker */}
+        <div style={{ background:`linear-gradient(135deg,${C.blue}22,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:"20px 20px 16px", marginBottom:16, position:"relative", overflow:"hidden", ...GLOW_STYLE(C.blue) }}>
+          <div style={{ position:"absolute", right:-10, top:-10, fontSize:90, opacity:.05 }}>⚽</div>
+          <div style={{ fontSize:10, letterSpacing:3, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Nu vælger</div>
+          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1 }}>{curPicker?.name}</div>
+          <div style={{ marginTop:10, display:"flex", gap:8 }}>
+            {activeLeagues.map(lid => (
+              <span key={lid} style={{ fontSize:20, opacity:picks[curId]?.[lid]?1:.2, filter:picks[curId]?.[lid]?"none":"grayscale(1)", transition:"all .2s" }}>{LEAGUES[lid].flag}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* WhatsApp notifikation popup */}
+        {justPicked && (
+          <div style={{ background:`linear-gradient(135deg,#25D36622,${C.card})`, border:`1px solid #25D36644`, borderRadius:12, padding:16, marginBottom:16, boxShadow:`0 0 24px #25D36622` }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:"#25D366", fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Nu er det</div>
+            <div style={{ fontWeight:900, fontSize:20, marginBottom:4 }}>{justPicked.nextPlayer.name}s tur</div>
+            <div style={{ color:C.g1, fontSize:13, marginBottom:14 }}>Send en besked så de ved det er deres tur</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={sendWhatsApp} style={{ flex:1, background:"#25D366", border:"none", borderRadius:8, padding:"11px 16px", fontWeight:800, fontSize:13, cursor:"pointer", color:"#000", letterSpacing:.5 }}>
+                💬 Send WhatsApp
+              </button>
+              <button onClick={()=>setJustPicked(null)} style={{ background:C.card, border:`1px solid ${C.border2}`, borderRadius:8, padding:"11px 14px", fontWeight:700, fontSize:13, cursor:"pointer", color:C.g1 }}>
+                Spring over
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* View as */}
         <div style={{ marginBottom:16 }}>
