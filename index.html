@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#080808"/>
+  <title>LigaManager</title>
+  <style>* { margin:0; padding:0; box-sizing:border-box; } body { background:#080808; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script>
+    // localStorage-based storage (works without backend)
+    window.storage = {
+      get: async (key, shared) => {
+        try {
+          const k = shared ? 'shared_' + key : 'user_' + key;
+          const value = localStorage.getItem(k);
+          return value ? { key, value } : null;
+        } catch { return null; }
+      },
+      set: async (key, value, shared) => {
+        try {
+          const k = shared ? 'shared_' + key : 'user_' + key;
+          localStorage.setItem(k, value);
+          return { key, value };
+        } catch { return null; }
+      },
+      delete: async (key, shared) => {
+        try {
+          const k = shared ? 'shared_' + key : 'user_' + key;
+          localStorage.removeItem(k);
+          return { key, deleted: true };
+        } catch { return null; }
+      },
+      list: async () => ({ keys: Object.keys(localStorage) }),
+    };
+  </script>
+  <script type="text/babel" data-presets="react" src="./App.jsx"></script>
+  <script type="text/babel" data-presets="react">
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
