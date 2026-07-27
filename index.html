@@ -525,8 +525,12 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
   function sendWhatsApp() {
     if (!justPicked) return;
     const url = `https://liga-manager-kzcg.vercel.app`;
-    const msg = `[football] LigaManager  Det er din tur!\n\n${justPicked.nextPlayer.name}, du skal nu vælge dit næste hold.\n\nGruppe: ${league.name}\n\nÅbn appen og vælg: ${url}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+    const msg = `LigaManager - Det er din tur!\n\n${justPicked.nextPlayer.name}, du skal nu vaelge dit naeste hold.\n\nGruppe: ${league.name}\n\nAabn appen og vaelg: ${url}`;
+    const raw = justPicked.nextPlayer.phone || "";
+    const digits = raw.replace(/[\s\-\+\(\)]/g, "");
+    const intl = digits.startsWith("45") ? digits : digits.startsWith("0") ? "45" + digits.slice(1) : "45" + digits;
+    const waUrl = digits ? `https://wa.me/${intl}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, "_blank");
     setJustPicked(null);
   }
 
@@ -1043,33 +1047,38 @@ function AuthScreen({ onAuth, onDemo }) {
 function JoinScreen({ onJoin, onBack, initialCode = "" }) {
   const [code, setCode] = useState(initialCode.toUpperCase());
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const inp = { background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, fontFamily:"inherit" };
+  const inp = { background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, borderRadius:8, color:C.white, padding:"12px 14px", fontSize:15, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
 
   async function handleJoin() {
     setError("");
     if (code.length !== 6) return setError("Gruppekoden skal være 6 tegn");
     if (!name.trim()) return setError("Indtast dit navn");
+    if (!phone.trim()) return setError("Indtast dit telefonnummer");
     setLoading(true);
     const group = await loadGroup(code.trim().toUpperCase());
     setLoading(false);
-    if (!group) return setError("Ingen gruppe fundet med den kode  tjek koden og prøv igen");
+    if (!group) return setError("Ingen gruppe fundet med den kode - tjek koden og prøv igen");
     const alreadyIn = group.players.some(p => p.name.toLowerCase() === name.trim().toLowerCase());
-    if (alreadyIn) { onJoin(code.trim().toUpperCase(), group, name.trim()); return; }
-    if (group.phase !== "draft" || group.draftIdx > 0) return setError("Draftet er allerede i gang  kontakt game master");
-    onJoin(code.trim().toUpperCase(), group, name.trim());
+    if (alreadyIn) { onJoin(code.trim().toUpperCase(), group, name.trim(), phone.trim()); return; }
+    if (group.phase === "draft" && group.draftIdx > 0) return setError("Draftet er allerede i gang - kontakt game master");
+    onJoin(code.trim().toUpperCase(), group, name.trim(), phone.trim());
   }
 
   return (
     <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
       <HexBg/>
-      <NavBar title="Join gruppe" onBack={onBack}/>
+      <NavBar title="LigaManager"/>
       <div style={{ maxWidth:400, margin:"0 auto", padding:"40px 24px" }}>
-        <div style={{ fontSize:36, textAlign:"center", marginBottom:16 }}>[link]</div>
-        <h2 style={{ fontWeight:900, fontSize:22, textAlign:"center", margin:"0 0 8px" }}>Tilmeld dig en gruppe</h2>
-        <p style={{ color:C.g1, fontSize:14, textAlign:"center", marginBottom:32 }}>Indtast den 6-cifrede kode du har modtaget</p>
+        <div style={{ textAlign:"center", marginBottom:32 }}>
+          <h1 style={{ fontSize:36, fontWeight:900, letterSpacing:-1, margin:"0 0 6px" }}>
+            LIGA<span style={{ color:C.cyan }}>MANAGER</span>
+          </h1>
+          <p style={{ color:C.g1, fontSize:14 }}>Indtast din gruppekode for at komme i gang</p>
+        </div>
 
         {error && <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#ff4d6d", marginBottom:16 }}>{error}</div>}
 
@@ -1080,12 +1089,20 @@ function JoinScreen({ onJoin, onBack, initialCode = "" }) {
             onChange={e => setCode(e.target.value.toUpperCase().slice(0,6))}
             style={{ ...inp, fontSize:24, fontWeight:900, letterSpacing:6, textAlign:"center" }}
           />
-          <input placeholder="Dit navn" value={name} onChange={e=>setName(e.target.value)} style={inp}
-            onKeyDown={e=>e.key==="Enter"&&handleJoin()}/>
+          <input placeholder="Dit navn" value={name} onChange={e=>setName(e.target.value)} style={inp}/>
+          <input
+            placeholder="Dit telefonnummer (til WhatsApp)"
+            value={phone}
+            onChange={e=>setPhone(e.target.value)}
+            type="tel"
+            style={inp}
+            onKeyDown={e=>e.key==="Enter"&&handleJoin()}
+          />
+          <div style={{ fontSize:11, color:C.g2 }}>Bruges kun til at give dig besked når det er din tur</div>
         </div>
 
-        <Btn onClick={handleJoin} disabled={loading||code.length!==6||!name.trim()} full style={{ padding:16, fontSize:14, letterSpacing:2 }}>
-          {loading ? "Søger" : "Join gruppe "}
+        <Btn onClick={handleJoin} disabled={loading||code.length!==6||!name.trim()||!phone.trim()} full style={{ padding:16, fontSize:14, letterSpacing:2 }}>
+          {loading ? "Søger..." : "Join gruppe"}
         </Btn>
       </div>
     </div>
@@ -1258,7 +1275,7 @@ function App() {
         }
         setScreen("home");
       } else {
-        setScreen("auth");
+        setScreen("join");
       }
     });
   }, []);
@@ -1311,12 +1328,11 @@ function App() {
     setScreen("share");
   }
 
-  async function handleJoin(code, group, playerName) {
-    // Add player if not already in
+  async function handleJoin(code, group, playerName, playerPhone) {
     let updatedGroup = { ...group };
     const alreadyIn = group.players.some(p => p.name.toLowerCase() === playerName.toLowerCase());
     if (!alreadyIn) {
-      const newPlayer = { id: `p${group.players.length}`, name: playerName };
+      const newPlayer = { id: `p${group.players.length}`, name: playerName, phone: playerPhone };
       updatedGroup = {
         ...group,
         players: [...group.players, newPlayer],
@@ -1324,10 +1340,17 @@ function App() {
         draftOrder: buildOrder([...group.players, newPlayer], group.draftMode),
       };
       await saveGroup(code, updatedGroup);
+    } else {
+      // Update phone if already in
+      updatedGroup = {
+        ...group,
+        players: group.players.map(p => p.name.toLowerCase() === playerName.toLowerCase() ? { ...p, phone: playerPhone } : p),
+      };
+      await saveGroup(code, updatedGroup);
     }
     setGroupCode(code);
     setLeague(updatedGroup);
-    const updatedUser = { ...user, groupCode: code, name: playerName };
+    const updatedUser = { ...user, groupCode: code, name: playerName, phone: playerPhone };
     setUser(updatedUser);
     await saveUser(updatedUser);
     const dest = updatedGroup.phase === "waiting" ? "waiting" : updatedGroup.phase === "draft" ? "draft" : "league";
