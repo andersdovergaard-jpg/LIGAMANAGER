@@ -466,7 +466,7 @@ function SetupScreen({ onStart, onBack }) {
           <label style={lbl}>Draft-rækkefølge</label>
           {[{id:"random",icon:"[random]",label:"Tilfældig",desc:"Systemet trækker lod"},{id:"manual",icon:"[manual]",label:"Manuel",desc:"Rækkefølge som indtastet"},{id:"snake",icon:"[snake]",label:"Snake",desc:"Skiftende retning per runde"}].map(o=>(
             <div key={o.id} onClick={()=>setDraftMode(o.id)} style={{ display:"flex", alignItems:"center", gap:14, padding:"13px 16px", background:draftMode===o.id?C.cyanD:C.card, border:`1px solid ${draftMode===o.id?C.cyan+"66":C.border}`, borderRadius:8, marginBottom:8, cursor:"pointer" }}>
-              <div style={{ width:16, height:16, border:`2px solid ${active?C.cyan:C.g2}`, flexShrink:0 }}/>
+              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${draftMode===o.id?C.cyan:C.g2}`, background:draftMode===o.id?C.cyan:"transparent", flexShrink:0 }}/>
               <div style={{ fontSize:20 }}>{o.icon}</div>
               <div><div style={{ fontWeight:700, fontSize:14 }}>{o.label}</div><div style={{ color:C.g1, fontSize:12 }}>{o.desc}</div></div>
             </div>
