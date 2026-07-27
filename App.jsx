@@ -1362,3 +1362,18 @@ function App() {
     {screen==="league"  && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")}/>}
   </>;
 }
+
+// Self-mount when loaded via Babel standalone
+if (typeof document !== "undefined") {
+  const _mount = () => {
+    const el = document.getElementById("root");
+    if (el && typeof ReactDOM !== "undefined") {
+      ReactDOM.createRoot(el).render(React.createElement(App));
+    }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", _mount);
+  } else {
+    _mount();
+  }
+}
