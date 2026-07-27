@@ -246,7 +246,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", borderBottom:`1px solid ${C.border}` }}>
         <div style={{ fontSize:12, color:C.g1 }}>
           👋 <span style={{ color:C.white, fontWeight:700 }}>{user?.name || "Bruger"}</span>
-          <span style={{ marginLeft:8, fontSize:10, background:C.cyanD, color:C.cyan, border:C.cyan}44`, borderRadius:4, padding:"2px 7px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>
+          <span style={{ marginLeft:8, fontSize:10, background:C.cyanD, color:C.cyan, border:`1px solid ${C.cyan}44`, borderRadius:4, padding:"2px 7px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>
             {user?.tier || "Amateur"}
           </span>
         </div>
@@ -268,7 +268,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
 
       <div style={{ maxWidth:520, margin:"0 auto", padding:"0 16px" }}>
         {saved && (
-          <div onClick={onJoin} style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:C.cyan) }}>
+          <div onClick={onJoin} style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:`1px solid ${C.cyan}44`, borderRadius:12, padding:20, marginBottom:14, cursor:"pointer", boxShadow:`0 0 32px ${C.cyan}22` }}>
             <div style={{ fontSize:10, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Aktiv gruppe</div>
             <div style={{ fontWeight:900, fontSize:22, letterSpacing:-0.5 }}>{saved.name}</div>
             <div style={{ color:C.g1, fontSize:13, marginTop:4, marginBottom:14 }}>
@@ -318,10 +318,11 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
           );
         })}
       </div>
-      </div>
     </div>
   );
-} ─────────────────────────────────────────────────────────────────────
+}
+
+// ─────────────────────────────────────────────────────────────────────
 function SetupScreen({ onStart, onBack }) {
   const [name, setName] = useState("Min Gruppe 26/27");
   const [players, setPlayers] = useState(["","","",""]);
@@ -443,7 +444,7 @@ function SetupScreen({ onStart, onBack }) {
           <label style={lbl}>Draft-rækkefølge</label>
           {[{id:"random",icon:"🎲",label:"Tilfældig",desc:"Systemet trækker lod"},{id:"manual",icon:"📋",label:"Manuel",desc:"Rækkefølge som indtastet"},{id:"snake",icon:"🐍",label:"Snake",desc:"Skiftende retning per runde"}].map(o=>(
             <div key={o.id} onClick={()=>setDraftMode(o.id)} style={{ display:"flex", alignItems:"center", gap:14, padding:"13px 16px", background:draftMode===o.id?C.cyanD:C.card, border:`1px solid ${draftMode===o.id?C.cyan+"66":C.border}`, borderRadius:8, marginBottom:8, cursor:"pointer" }}>
-              <div style={{ width:16, height:16, border:C.cyan:"transparent", flexShrink:0 }}/>
+              <div style={{ width:16, height:16, border:`2px solid ${active?C.cyan:C.g2}`, flexShrink:0 }}/>
               <div style={{ fontSize:20 }}>{o.icon}</div>
               <div><div style={{ fontWeight:700, fontSize:14 }}>{o.label}</div><div style={{ color:C.g1, fontSize:12 }}>{o.desc}</div></div>
             </div>
@@ -519,7 +520,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
         </div>
 
         {/* Current picker */}
-        <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:C.cyan) }}>
+        <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:`1px solid ${C.cyan}44`, borderRadius:12, padding:"20px 20px 16px", marginBottom:16, position:"relative", overflow:"hidden" }}>
           <div style={{ position:"absolute", right:-10, top:-10, fontSize:90, opacity:.05 }}>⚽</div>
           <div style={{ fontSize:10, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Nu vælger</div>
           <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1 }}>{curPicker?.name}</div>
@@ -553,7 +554,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {players.map(p=>{
               const active = viewAs===p.id||(!viewAs&&p.id===curId);
-              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", border:C.cyan:C.g1, letterSpacing:.5 }}>{p.name}</button>;
+              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", border:`1px solid ${active?C.cyan+"66":C.border}`, letterSpacing:.5 }}>{p.name}</button>;
             })}
           </div>
         </div>
@@ -707,13 +708,13 @@ function LeagueScreen({ league, onUpdate, onDraft }) {
       <NavBar title={league.name} right={
         league.phase==="draft"
           ? <button onClick={onDraft} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Draft →</button>
-          : <span style={{ fontSize:10, background:C.cyanD, color:C.cyan, border:C.cyan}44`, borderRadius:4, padding:"3px 8px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Sæson</span>
+          : <span style={{ fontSize:10, background:C.cyanD, color:C.cyan, border:`1px solid ${C.cyan}44`, borderRadius:4, padding:"3px 8px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Sæson</span>
       }/>
 
       {/* Tabs */}
       <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, position:"sticky", top:49, background:C.grad, zIndex:9, overflowX:"auto" }}>
         {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:"13px 16px", background:"none", border:C.cyan:"transparent"}`, transition:"all .15s", whiteSpace:"nowrap" }}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:"13px 16px", background:"none", border:"none", cursor:"pointer", fontWeight:800, fontSize:11, letterSpacing:2, textTransform:"uppercase", color:tab===t.id?C.cyan:C.g2, borderBottom:`2px solid ${tab===t.id?C.cyan:"transparent"}`, transition:"all .15s", whiteSpace:"nowrap" }}>
             {t.label}
           </button>
         ))}
@@ -1082,7 +1083,7 @@ function ShareScreen({ code, groupName, onContinue }) {
       <p style={{ color:C.g1, fontSize:14, marginBottom:32 }}>Del denne kode med dine venner</p>
 
       {/* Code display */}
-      <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:C.cyan}22` }}>
+      <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:`1px solid ${C.cyan}22` }}>
         <div style={{ fontSize:11, letterSpacing:4, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
         <div style={{ fontSize:48, fontWeight:900, letterSpacing:10, color:C.white }}>{code}</div>
         <div style={{ fontSize:14, color:C.g1, marginTop:8 }}>{groupName}</div>
@@ -1133,7 +1134,7 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
       <div style={{ maxWidth:480, margin:"0 auto", padding:"24px 16px 48px" }}>
 
         {/* Group info */}
-        <div style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:C.cyan}22` }}>
+        <div style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:`1px solid ${C.cyan}22` }}>
           <div style={{ fontSize:11, letterSpacing:4, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
           <div style={{ fontSize:42, fontWeight:900, letterSpacing:8 }}>{league.code}</div>
           <div style={{ color:C.g1, fontSize:13, marginTop:6 }}>{league.name}</div>
@@ -1344,7 +1345,7 @@ function App() {
 
   if (screen === "loading") return (
     <div style={{ minHeight:"100vh", background:C.grad, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"'Inter',sans-serif" }}>
-      <div style={{ width:36, height:36, border:C.cyan}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+      <div style={{ width:36, height:36, border:`3px solid ${C.border}`, borderTop:`3px solid ${C.cyan}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
