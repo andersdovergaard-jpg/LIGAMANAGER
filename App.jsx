@@ -154,22 +154,50 @@ function isDraftDone(players, picks, activeLeagues) {
   return players.every(p => (activeLeagues || LEAGUE_IDS).every(lid => picks[p.id]?.[lid]));
 }
 
-// Design tokens
+// Design tokens — Concept A: deep blue-purple, hexagon pattern, cyan accents
 const C = {
-  bg: "#080808", surface: "#111", card: "#141414", border: "#1e1e1e", border2: "#2a2a2a",
-  blue: "#00A8FF", blueD: "#00A8FF22", gold: "#FFD700", green: "#00ff85",
-  white: "#ffffff", g1: "#888", g2: "#444",
+  bg:      "#0f0c29",
+  bg2:     "#1a1640",
+  surface: "#1e1a45",
+  card:    "rgba(255,255,255,0.08)",
+  cardS:   "rgba(255,255,255,0.12)",
+  border:  "rgba(255,255,255,0.1)",
+  border2: "rgba(255,255,255,0.18)",
+  cyan:    "#00cfff",
+  cyanD:   "rgba(0,207,255,0.15)",
+  purple:  "#7b2ff7",
+  purpleL: "#a78bfa",
+  gold:    "#ffd700",
+  green:   "#00ff85",
+  white:   "#ffffff",
+  g1:      "rgba(180,160,255,0.7)",
+  g2:      "rgba(180,160,255,0.35)",
+  grad:    "linear-gradient(160deg,#0f0c29,#302b63,#24243e)",
+  gradH:   "linear-gradient(135deg,#7b2ff7,#00cfff)",
+  gradG:   "linear-gradient(135deg,#7b2ff7,#00cfff,#00ff85)",
 };
 
-const GLOW_STYLE = (color) => ({ boxShadow: `0 0 32px ${color}33` });
+const GLOW_STYLE = (color) => ({ boxShadow: `0 0 24px ${color}44` });
+
+// Hexagon SVG background — subtle pattern
+const HexBg = () => (
+  <svg style={{ position:"fixed", top:0, left:0, width:"100%", height:"100%", opacity:0.055, pointerEvents:"none", zIndex:0 }} viewBox="0 0 400 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="hexpat" x="0" y="0" width="60" height="69" patternUnits="userSpaceOnUse">
+        <polygon points="30,4 56,18 56,51 30,65 4,51 4,18" fill="none" stroke="#a78bfa" strokeWidth="1"/>
+      </pattern>
+    </defs>
+    <rect width="400" height="800" fill="url(#hexpat)"/>
+  </svg>
+);
 
 function NavBar({ title, onBack, right }) {
   return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, background:C.bg, zIndex:10 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, background:"rgba(15,12,41,0.92)", backdropFilter:"blur(12px)", zIndex:10 }}>
       {onBack
         ? <button onClick={onBack} style={{ background:"none", border:"none", color:C.g1, cursor:"pointer", fontSize:12, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" }}>← Tilbage</button>
         : <div style={{width:60}}/>}
-      <span style={{ fontWeight:900, fontSize:12, letterSpacing:3, textTransform:"uppercase" }}>{title}</span>
+      <span style={{ fontWeight:900, fontSize:12, letterSpacing:3, textTransform:"uppercase", color:C.white }}>{title}</span>
       <div style={{width:60, display:"flex", justifyContent:"flex-end"}}>{right}</div>
     </div>
   );
@@ -177,12 +205,12 @@ function NavBar({ title, onBack, right }) {
 
 function Btn({ onClick, children, variant="primary", disabled, full, style:sx={} }) {
   const v = {
-    primary: { background:C.blue, color:"#000", border:"none" },
-    ghost:   { background:"transparent", color:C.white, border:`1px solid ${C.border2}` },
-    dim:     { background:C.card, color:C.g1, border:`1px solid ${C.border}` },
+    primary: { background:C.gradH, color:"#fff", border:"none" },
+    ghost:   { background:"rgba(255,255,255,0.06)", color:C.white, border:`1px solid ${C.border2}`,
+    dim:     { background:"rgba(255,255,255,0.04)", color:C.g1, border:`1px solid ${C.border}` },
   }[variant];
   return (
-    <button onClick={disabled?undefined:onClick} style={{ ...v, borderRadius:6, padding:"13px 18px", fontSize:13, fontWeight:800, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, width:full?"100%":undefined, letterSpacing:1, textTransform:"uppercase", fontFamily:"inherit", transition:"opacity .15s", ...sx }}>
+    <button onClick={disabled?undefined:onClick} style={{ ...v, borderRadius:8, padding:"13px 18px", fontSize:13, fontWeight:800, cursor:disabled?"not-allowed":"pointer", opacity:disabled?.35:1, width:full?"100%":undefined, letterSpacing:1, textTransform:"uppercase", fontFamily:"inherit", transition:"opacity .15s", ...sx }}>
       {children}
     </button>
   );
@@ -190,7 +218,7 @@ function Btn({ onClick, children, variant="primary", disabled, full, style:sx={}
 
 function Card({ children, glow, color, style:sx={} }) {
   return (
-    <div style={{ background:C.card, border:`1px solid ${glow?(color||C.blue)+"55":C.border}`, borderRadius:12, padding:16, ...(glow?GLOW_STYLE(color||C.blue):{}), ...sx }}>
+    <div style={{ background:glow?C.cardS:C.card, border:`1px solid ${glow?(color||C.cyan)+"55":C.border}`, borderRadius:14, padding:16, backdropFilter:"blur(8px)", ...(glow?GLOW_STYLE(color||C.cyan):{}), ...sx }}>
       {children}
     </div>
   );
@@ -202,8 +230,8 @@ function Label({ children }) {
 
 function ProgressBar({ value }) {
   return (
-    <div style={{ height:3, background:C.border2, borderRadius:2, overflow:"hidden" }}>
-      <div style={{ height:"100%", width:`${Math.min(value,1)*100}%`, background:`linear-gradient(90deg,${C.blue},${C.green})`, borderRadius:2, transition:"width .4s" }}/>
+    <div style={{ height:3, background:"rgba(255,255,255,0.1)", borderRadius:2, overflow:"hidden" }}>
+      <div style={{ height:"100%", width:`${Math.min(value,1)*100}%`, background:C.gradG, borderRadius:2, transition:"width .4s" }}/>
     </div>
   );
 }
@@ -211,12 +239,14 @@ function ProgressBar({ value }) {
 // ── HOME ──────────────────────────────────────────────────────────────────────
 function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user }) {
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", paddingBottom:40 }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", paddingBottom:40, position:"relative" }}>
+      <HexBg/>
+      <div style={{ position:"relative", zIndex:1 }}>
       {/* User bar */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", borderBottom:`1px solid ${C.border}` }}>
         <div style={{ fontSize:12, color:C.g1 }}>
           👋 <span style={{ color:C.white, fontWeight:700 }}>{user?.name || "Bruger"}</span>
-          <span style={{ marginLeft:8, fontSize:10, background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:4, padding:"2px 7px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>
+          <span style={{ marginLeft:8, fontSize:10, background:C.cyanD, color:C.cyan, border:C.cyan}44`, borderRadius:4, padding:"2px 7px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>
             {user?.tier || "Amateur"}
           </span>
         </div>
@@ -225,12 +255,12 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
 
       {/* Hero */}
       <div style={{ position:"relative", overflow:"hidden", padding:"60px 24px 44px", textAlign:"center" }}>
-        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.blue}07 40px,${C.blue}07 41px)`, pointerEvents:"none" }}/>
-        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.blue}20 0%,transparent 65%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.purple}07 40px,${C.purple}07 41px)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.cyan}20 0%,transparent 65%)`, pointerEvents:"none" }}/>
         <div style={{ position:"relative" }}>
-          <div style={{ fontSize:10, letterSpacing:6, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:14 }}>Fantasy Football</div>
+          <div style={{ fontSize:10, letterSpacing:6, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:14 }}>Fantasy Football</div>
           <h1 style={{ margin:"0 0 4px", fontSize:54, fontWeight:900, letterSpacing:-2, lineHeight:1 }}>
-            LIGA<span style={{ color:C.blue }}>MANAGER</span>
+            LIGA<span style={{ color:C.cyan }}>MANAGER</span>
           </h1>
           <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:14 }}>Vælg hold · Følg ligaer · Vind med færrest point</p>
         </div>
@@ -238,13 +268,13 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
 
       <div style={{ maxWidth:520, margin:"0 auto", padding:"0 16px" }}>
         {saved && (
-          <div onClick={onJoin} style={{ background:`linear-gradient(135deg,${C.blue}18,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:20, marginBottom:14, cursor:"pointer", ...GLOW_STYLE(C.blue) }}>
-            <div style={{ fontSize:10, letterSpacing:3, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Aktiv gruppe</div>
+          <div onClick={onJoin} style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:C.cyan) }}>
+            <div style={{ fontSize:10, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Aktiv gruppe</div>
             <div style={{ fontWeight:900, fontSize:22, letterSpacing:-0.5 }}>{saved.name}</div>
             <div style={{ color:C.g1, fontSize:13, marginTop:4, marginBottom:14 }}>
               {saved.players.length} spillere · {saved.phase==="draft"?"Draft igangværende":"Sæson aktiv"}
             </div>
-            <div style={{ color:C.blue, fontWeight:800, fontSize:12, letterSpacing:1.5, textTransform:"uppercase" }}>Fortsæt →</div>
+            <div style={{ color:C.cyan, fontWeight:800, fontSize:12, letterSpacing:1.5, textTransform:"uppercase" }}>Fortsæt →</div>
           </div>
         )}
 
@@ -268,7 +298,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
                 {showcaseLeagues.map(lid => {
                   const l = LEAGUES[lid];
                   return (
-                    <div key={lid} style={{ background:`linear-gradient(135deg,${l.color},${C.card})`, border:`1px solid ${l.accent}33`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <div key={lid} style={{ background:`linear-gradient(135deg,${l.color}cc,rgba(255,255,255,0.06))`, border:`1px solid ${l.accent}44`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between", backdropFilter:"blur(4px)" }}>
                       <div>
                         <div style={{ fontSize:18, marginBottom:3 }}>{l.flag}</div>
                         <div style={{ fontWeight:700, fontSize:11, color:l.accent }}>{l.name}</div>
@@ -278,7 +308,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
                   );
                 })}
                 {key !== "amateur" && (
-                  <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:4 }}>
+                  <div style={{ background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:4 }}>
                     <div style={{ fontSize:18, color:t.color, fontWeight:900 }}>+{t.maxLeagues - 5}</div>
                     <div style={{ fontSize:10, color:C.g2, fontWeight:800, letterSpacing:1 }}>VALGFRIE</div>
                   </div>
@@ -288,11 +318,10 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
           );
         })}
       </div>
+      </div>
     </div>
   );
-}
-
-// ── SETUP ─────────────────────────────────────────────────────────────────────
+} ─────────────────────────────────────────────────────────────────────
 function SetupScreen({ onStart, onBack }) {
   const [name, setName] = useState("Min Gruppe 26/27");
   const [players, setPlayers] = useState(["","","",""]);
@@ -332,7 +361,7 @@ function SetupScreen({ onStart, onBack }) {
       draftIdx:0, phase:"draft" });
   }
 
-  const inp = { background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:6, color:C.white, padding:"12px 14px", fontSize:14, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
+  const inp = { background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, fontFamily:"inherit" };
   const lbl = { fontSize:10, letterSpacing:3, color:C.g1, fontWeight:800, textTransform:"uppercase", display:"block", marginBottom:10 };
 
   function handleStart() {
@@ -346,7 +375,8 @@ function SetupScreen({ onStart, onBack }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
+      <HexBg/>
       <NavBar title="Opret gruppe" onBack={onBack}/>
       <div style={{ maxWidth:520, margin:"0 auto", padding:"24px 16px 48px" }}>
 
@@ -384,7 +414,7 @@ function SetupScreen({ onStart, onBack }) {
                     <div style={{ fontSize:12, fontWeight:800, color:active?l.accent:C.white }}>{l.name}</div>
                   </div>
                   <img src={l.logo} alt={l.name} style={{ width:34, height:34, objectFit:"contain", opacity:active?.95:.5, flexShrink:0 }} onError={e=>e.target.style.display="none"}/>
-                  {active && !isAmateur && <div style={{ position:"absolute", top:6, right:6, color:C.green, fontSize:12, fontWeight:900, background:C.bg+"cc", borderRadius:"50%", width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center" }}>✓</div>}
+                  {active && !isAmateur && <div style={{ position:"absolute", top:6, right:6, color:C.green, fontSize:12, fontWeight:900, background:C.grad+"cc", borderRadius:"50%", width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center" }}>✓</div>}
                 </div>
               );
             })}
@@ -406,14 +436,14 @@ function SetupScreen({ onStart, onBack }) {
               </div>
             ))}
           </div>
-          {players.length<12&&<button onClick={()=>setPlayers([...players,""])} style={{ marginTop:10, background:"none", border:`1px dashed ${C.border2}`, borderRadius:6, color:C.g1, padding:10, width:"100%", cursor:"pointer", fontSize:13, fontWeight:600 }}>+ Tilføj spiller</button>}
+          {players.length<12&&<button onClick={()=>setPlayers([...players,""])} style={{ marginTop:10, background:"none", border:`1px solid ${C.border2}`, fontWeight:600 }}>+ Tilføj spiller</button>}
         </div>
 
         <div style={{ marginBottom:24 }}>
           <label style={lbl}>Draft-rækkefølge</label>
           {[{id:"random",icon:"🎲",label:"Tilfældig",desc:"Systemet trækker lod"},{id:"manual",icon:"📋",label:"Manuel",desc:"Rækkefølge som indtastet"},{id:"snake",icon:"🐍",label:"Snake",desc:"Skiftende retning per runde"}].map(o=>(
-            <div key={o.id} onClick={()=>setDraftMode(o.id)} style={{ display:"flex", alignItems:"center", gap:14, padding:"13px 16px", background:draftMode===o.id?C.blue+"15":C.card, border:`1px solid ${draftMode===o.id?C.blue+"66":C.border}`, borderRadius:8, marginBottom:8, cursor:"pointer" }}>
-              <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${draftMode===o.id?C.blue:C.g2}`, background:draftMode===o.id?C.blue:"transparent", flexShrink:0 }}/>
+            <div key={o.id} onClick={()=>setDraftMode(o.id)} style={{ display:"flex", alignItems:"center", gap:14, padding:"13px 16px", background:draftMode===o.id?C.cyanD:C.card, border:`1px solid ${draftMode===o.id?C.cyan+"66":C.border}`, borderRadius:8, marginBottom:8, cursor:"pointer" }}>
+              <div style={{ width:16, height:16, border:C.cyan:"transparent", flexShrink:0 }}/>
               <div style={{ fontSize:20 }}>{o.icon}</div>
               <div><div style={{ fontWeight:700, fontSize:14 }}>{o.label}</div><div style={{ color:C.g1, fontSize:12 }}>{o.desc}</div></div>
             </div>
@@ -424,9 +454,9 @@ function SetupScreen({ onStart, onBack }) {
           <label style={lbl}>Draft-mode</label>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
             {[{id:false,icon:"🏠",label:"Live",desc:"Alle samlet"},{id:true,icon:"📱",label:"Async",desc:"Hver for sig"}].map(o=>(
-              <div key={String(o.id)} onClick={()=>setAsyncMode(o.id)} style={{ padding:"14px 12px", textAlign:"center", borderRadius:8, cursor:"pointer", background:asyncMode===o.id?C.blue+"15":C.card, border:`1px solid ${asyncMode===o.id?C.blue+"66":C.border}` }}>
+              <div key={String(o.id)} onClick={()=>setAsyncMode(o.id)} style={{ padding:"14px 12px", textAlign:"center", borderRadius:8, cursor:"pointer", background:asyncMode===o.id?C.cyanD:C.card, border:`1px solid ${asyncMode===o.id?C.cyan+"66":C.border}` }}>
                 <div style={{ fontSize:26, marginBottom:6 }}>{o.icon}</div>
-                <div style={{ fontWeight:800, fontSize:14, color:asyncMode===o.id?C.blue:C.white }}>{o.label}</div>
+                <div style={{ fontWeight:800, fontSize:14, color:asyncMode===o.id?C.cyan:C.white }}>{o.label}</div>
                 <div style={{ color:C.g1, fontSize:11, marginTop:2 }}>{o.desc}</div>
               </div>
             ))}
@@ -475,8 +505,9 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
-      <NavBar title="Draft" onBack={onLeague} right={<button onClick={onLeague} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Oversigt</button>}/>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
+      <HexBg/>
+      <NavBar title="Draft" onBack={onLeague} right={<button onClick={onLeague} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Oversigt</button>}/>
       <div style={{ maxWidth:520, margin:"0 auto", padding:"20px 16px 48px" }}>
 
         <div style={{ marginBottom:20 }}>
@@ -488,9 +519,9 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
         </div>
 
         {/* Current picker */}
-        <div style={{ background:`linear-gradient(135deg,${C.blue}22,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:"20px 20px 16px", marginBottom:16, position:"relative", overflow:"hidden", ...GLOW_STYLE(C.blue) }}>
+        <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:C.cyan) }}>
           <div style={{ position:"absolute", right:-10, top:-10, fontSize:90, opacity:.05 }}>⚽</div>
-          <div style={{ fontSize:10, letterSpacing:3, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Nu vælger</div>
+          <div style={{ fontSize:10, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Nu vælger</div>
           <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1 }}>{curPicker?.name}</div>
           <div style={{ marginTop:10, display:"flex", gap:8 }}>
             {activeLeagues.map(lid => (
@@ -509,7 +540,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
               <button onClick={sendWhatsApp} style={{ flex:1, background:"#25D366", border:"none", borderRadius:8, padding:"11px 16px", fontWeight:800, fontSize:13, cursor:"pointer", color:"#000", letterSpacing:.5 }}>
                 💬 Send WhatsApp
               </button>
-              <button onClick={()=>setJustPicked(null)} style={{ background:C.card, border:`1px solid ${C.border2}`, borderRadius:8, padding:"11px 14px", fontWeight:700, fontSize:13, cursor:"pointer", color:C.g1 }}>
+              <button onClick={()=>setJustPicked(null)} style={{ background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${C.border2}`, color:C.g1 }}>
                 Spring over
               </button>
             </div>
@@ -522,7 +553,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {players.map(p=>{
               const active = viewAs===p.id||(!viewAs&&p.id===curId);
-              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer", background:active?C.blue+"22":C.card, border:`1px solid ${active?C.blue+"66":C.border}`, color:active?C.blue:C.g1, letterSpacing:.5 }}>{p.name}</button>;
+              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", border:C.cyan:C.g1, letterSpacing:.5 }}>{p.name}</button>;
             })}
           </div>
         </div>
@@ -570,7 +601,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
               <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                 {TEAMS[selLeague].map(team=>{
                   const t = taken[selLeague].includes(team);
-                  return <button key={team} onClick={()=>!t&&pick(selLeague,team)} style={{ padding:"8px 12px", borderRadius:6, fontSize:13, fontWeight:700, cursor:t?"not-allowed":"pointer", background:t?C.bg:C.surface, border:`1px solid ${t?C.border:C.border2}`, color:t?C.g2:C.white, textDecoration:t?"line-through":"none" }}>{team}</button>;
+                  return <button key={team} onClick={()=>!t&&pick(selLeague,team)} style={{ padding:"8px 12px", borderRadius:6, fontSize:13, fontWeight:700, cursor:t?"not-allowed":"pointer", background:t?C.bg:C.surface, border:`1px solid ${C.border2}`, textDecoration:t?"line-through":"none" }}>{team}</button>;
                 })}
               </div>
             </Card>
@@ -671,17 +702,18 @@ function LeagueScreen({ league, onUpdate, onDraft }) {
   const TABS=[{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
+      <HexBg/>
       <NavBar title={league.name} right={
         league.phase==="draft"
-          ? <button onClick={onDraft} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Draft →</button>
-          : <span style={{ fontSize:10, background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:4, padding:"3px 8px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Sæson</span>
+          ? <button onClick={onDraft} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontSize:11, fontWeight:800, letterSpacing:1.5, textTransform:"uppercase" }}>Draft →</button>
+          : <span style={{ fontSize:10, background:C.cyanD, color:C.cyan, border:C.cyan}44`, borderRadius:4, padding:"3px 8px", fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Sæson</span>
       }/>
 
       {/* Tabs */}
-      <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, position:"sticky", top:49, background:C.bg, zIndex:9, overflowX:"auto" }}>
+      <div style={{ display:"flex", borderBottom:`1px solid ${C.border}`, position:"sticky", top:49, background:C.grad, zIndex:9, overflowX:"auto" }}>
         {TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:"13px 16px", background:"none", border:"none", cursor:"pointer", fontWeight:800, fontSize:11, letterSpacing:1.5, textTransform:"uppercase", color:tab===t.id?C.blue:C.g2, borderBottom:`2px solid ${tab===t.id?C.blue:"transparent"}`, transition:"all .15s", whiteSpace:"nowrap" }}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{ flexShrink:0, padding:"13px 16px", background:"none", border:C.cyan:"transparent"}`, transition:"all .15s", whiteSpace:"nowrap" }}>
             {t.label}
           </button>
         ))}
@@ -749,7 +781,7 @@ function LeagueScreen({ league, onUpdate, onDraft }) {
                 const trend = prevRank - currentRank; // positive = moved up
 
                 return (
-                  <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, border:`1px solid ${C.border}`, borderRadius:10 }}>
+                  <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${C.border}`, borderRadius:10 }}>
                     {/* Color dot */}
                     <div style={{ width:12, height:12, borderRadius:"50%", background:PLAYER_COLORS[players.findIndex(pl=>pl.id===p.id) % PLAYER_COLORS.length], flexShrink:0, boxShadow:`0 0 8px ${PLAYER_COLORS[players.findIndex(pl=>pl.id===p.id) % PLAYER_COLORS.length]}88` }}/>
                     {/* Name */}
@@ -796,11 +828,11 @@ function LeagueScreen({ league, onUpdate, onDraft }) {
                           <div style={{ width:22, textAlign:"center", fontSize:12, color:C.g2, fontWeight:700, flexShrink:0 }}>{pos+1}</div>
                           <div style={{ flex:1 }}>
                             <span style={{ fontSize:13, fontWeight:600 }}>{team}</span>
-                            {owner&&<span style={{ marginLeft:8, fontSize:11, color:C.blue, fontWeight:700 }}>{owner.name}</span>}
+                            {owner&&<span style={{ marginLeft:8, fontSize:11, color:C.cyan, fontWeight:700 }}>{owner.name}</span>}
                           </div>
                           <div style={{ display:"flex", gap:4 }}>
                             {[[-1,"↑"],[1,"↓"]].map(([dir,icon])=>(
-                              <button key={dir} onClick={()=>move(lid,team,dir)} disabled={(dir===-1&&pos===0)||(dir===1&&last)} style={{ background:C.surface, border:`1px solid ${C.border}`, color:((dir===-1&&pos===0)||(dir===1&&last))?C.g2:C.white, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:12, fontWeight:700 }}>{icon}</button>
+                              <button key={dir} onClick={()=>move(lid,team,dir)} disabled={(dir===-1&&pos===0)||(dir===1&&last)} style={{ background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${C.border}`, color:((dir===-1&&pos===0)||(dir===1&&last))?C.g2:C.white, borderRadius:5, width:28, height:28, cursor:"pointer", fontSize:12, fontWeight:700 }}>{icon}</button>
                             ))}
                           </div>
                         </div>
@@ -854,7 +886,7 @@ function AuthScreen({ onAuth, onDemo }) {
   const [showPw, setShowPw] = useState(false);
 
   const inp = {
-    background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:8,
+    background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`,
     color:C.white, padding:"14px 16px", fontSize:15, width:"100%",
     boxSizing:"border-box", outline:"none", fontFamily:"inherit",
   };
@@ -872,7 +904,7 @@ function AuthScreen({ onAuth, onDemo }) {
     onAuth({ email: email.trim(), name: mode === "signup" ? name.trim() : email.split("@")[0], tier: "amateur" });
   }
 
-  const page = { minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column" };
+  const page = { minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column" };
 
   if (mode === "forgot-sent") return (
     <div style={{ ...page, alignItems:"center", justifyContent:"center", padding:24, textAlign:"center" }}>
@@ -887,11 +919,11 @@ function AuthScreen({ onAuth, onDemo }) {
     <div style={page}>
       {/* Header */}
       <div style={{ position:"relative", overflow:"hidden", padding:"52px 24px 36px", textAlign:"center" }}>
-        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.blue}07 40px,${C.blue}07 41px)`, pointerEvents:"none" }}/>
-        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.blue}18 0%,transparent 65%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`repeating-linear-gradient(135deg,transparent,transparent 40px,${C.purple}07 40px,${C.purple}07 41px)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at 50% 0%,${C.cyan}18 0%,transparent 65%)`, pointerEvents:"none" }}/>
         <div style={{ position:"relative" }}>
           <h1 style={{ margin:"0 0 4px", fontSize:42, fontWeight:900, letterSpacing:-2, lineHeight:1 }}>
-            LIGA<span style={{ color:C.blue }}>MANAGER</span>
+            LIGA<span style={{ color:C.cyan }}>MANAGER</span>
           </h1>
           <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:10 }}>
             {mode === "login" ? "Log ind for at fortsætte" : mode === "signup" ? "Opret din konto" : "Nulstil adgangskode"}
@@ -925,7 +957,7 @@ function AuthScreen({ onAuth, onDemo }) {
 
         {mode === "login" && (
           <div style={{ textAlign:"right", marginBottom:20 }}>
-            <button onClick={()=>setMode("forgot")} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontSize:13, fontWeight:600 }}>
+            <button onClick={()=>setMode("forgot")} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontSize:13, fontWeight:600 }}>
               Glemt adgangskode?
             </button>
           </div>
@@ -962,17 +994,17 @@ function AuthScreen({ onAuth, onDemo }) {
         {/* Toggle mode */}
         <div style={{ textAlign:"center", fontSize:14, color:C.g1 }}>
           {mode === "login" ? (
-            <>Har du ikke en konto? <button onClick={()=>{ setMode("signup"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>Opret konto</button></>
+            <>Har du ikke en konto? <button onClick={()=>{ setMode("signup"); setError(""); }} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontWeight:700, fontSize:14 }}>Opret konto</button></>
           ) : mode === "signup" ? (
-            <>Har du allerede en konto? <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>Log ind</button></>
+            <>Har du allerede en konto? <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontWeight:700, fontSize:14 }}>Log ind</button></>
           ) : (
-            <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.blue, cursor:"pointer", fontWeight:700, fontSize:14 }}>← Tilbage til login</button>
+            <button onClick={()=>{ setMode("login"); setError(""); }} style={{ background:"none", border:"none", color:C.cyan, cursor:"pointer", fontWeight:700, fontSize:14 }}>← Tilbage til login</button>
           )}
         </div>
 
         {/* Dev demo */}
         <div style={{ marginTop:32, textAlign:"center" }}>
-          <button onClick={onDemo} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:6, color:C.g1, cursor:"pointer", fontSize:12, letterSpacing:1, padding:"8px 20px", fontWeight:600 }}>
+          <button onClick={onDemo} style={{ background:"none", border:`1px solid ${C.border2}`, fontWeight:600 }}>
             Se demo
           </button>
         </div>
@@ -988,7 +1020,7 @@ function JoinScreen({ onJoin, onBack, initialCode = "" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const inp = { background:"#0a0a0a", border:`1px solid ${C.border2}`, borderRadius:8, color:C.white, padding:"14px 16px", fontSize:15, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
+  const inp = { background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, fontFamily:"inherit" };
 
   async function handleJoin() {
     setError("");
@@ -1005,7 +1037,8 @@ function JoinScreen({ onJoin, onBack, initialCode = "" }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
+      <HexBg/>
       <NavBar title="Join gruppe" onBack={onBack}/>
       <div style={{ maxWidth:400, margin:"0 auto", padding:"40px 24px" }}>
         <div style={{ fontSize:36, textAlign:"center", marginBottom:16 }}>🔗</div>
@@ -1043,14 +1076,14 @@ function ShareScreen({ code, groupName, onContinue }) {
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, textAlign:"center" }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, textAlign:"center" }}>
       <div style={{ fontSize:48, marginBottom:16 }}>🎉</div>
       <h2 style={{ fontWeight:900, fontSize:24, margin:"0 0 8px", letterSpacing:-0.5 }}>Gruppe oprettet!</h2>
       <p style={{ color:C.g1, fontSize:14, marginBottom:32 }}>Del denne kode med dine venner</p>
 
       {/* Code display */}
-      <div style={{ background:`linear-gradient(135deg,${C.blue}22,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:16, padding:"28px 40px", marginBottom:24, boxShadow:`0 0 40px ${C.blue}22` }}>
-        <div style={{ fontSize:11, letterSpacing:4, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
+      <div style={{ background:`linear-gradient(135deg,${C.cyan}22,${C.card})`, border:C.cyan}22` }}>
+        <div style={{ fontSize:11, letterSpacing:4, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
         <div style={{ fontSize:48, fontWeight:900, letterSpacing:10, color:C.white }}>{code}</div>
         <div style={{ fontSize:14, color:C.g1, marginTop:8 }}>{groupName}</div>
       </div>
@@ -1094,13 +1127,14 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
   }, [league.phase]);
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
+      <HexBg/>
       <NavBar title="Venteværelse"/>
       <div style={{ maxWidth:480, margin:"0 auto", padding:"24px 16px 48px" }}>
 
         {/* Group info */}
-        <div style={{ background:`linear-gradient(135deg,${C.blue}18,${C.card})`, border:`1px solid ${C.blue}44`, borderRadius:12, padding:20, marginBottom:20, textAlign:"center", boxShadow:`0 0 32px ${C.blue}22` }}>
-          <div style={{ fontSize:11, letterSpacing:4, color:C.blue, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
+        <div style={{ background:`linear-gradient(135deg,${C.cyan}18,${C.card})`, border:C.cyan}22` }}>
+          <div style={{ fontSize:11, letterSpacing:4, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Gruppekode</div>
           <div style={{ fontSize:42, fontWeight:900, letterSpacing:8 }}>{league.code}</div>
           <div style={{ color:C.g1, fontSize:13, marginTop:6 }}>{league.name}</div>
         </div>
@@ -1115,19 +1149,19 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
             <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase" }}>
               Tilmeldte ({league.players.length})
             </div>
-            <button onClick={refresh} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:6, color:C.g1, cursor:"pointer", fontSize:11, padding:"4px 10px", fontWeight:600 }}>
+            <button onClick={refresh} style={{ background:"none", border:`1px solid ${C.border2}`, fontWeight:600 }}>
               {refreshing ? "…" : "↻ Opdater"}
             </button>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {league.players.map((p, i) => (
-              <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, border:`1px solid ${p.name === league.gameMaster ? C.blue+"44" : C.border}`, borderRadius:10 }}>
-                <div style={{ width:32, height:32, borderRadius:"50%", background:p.name === league.gameMaster ? C.blue : C.border2, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:p.name === league.gameMaster ? "#000" : C.g1, flexShrink:0 }}>
+              <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${p.name === league.gameMaster ? C.cyan+"44" : C.border}`, borderRadius:10 }}>
+                <div style={{ width:32, height:32, border:`1px solid ${C.border2}`, flexShrink:0 }}>
                   {p.name[0].toUpperCase()}
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:700, fontSize:15 }}>{p.name}</div>
-                  {p.name === league.gameMaster && <div style={{ fontSize:11, color:C.blue, fontWeight:700 }}>Game Master</div>}
+                  {p.name === league.gameMaster && <div style={{ fontSize:11, color:C.cyan, fontWeight:700 }}>Game Master</div>}
                 </div>
                 <div style={{ color:C.green, fontSize:18 }}>✓</div>
               </div>
@@ -1139,7 +1173,7 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
         <div style={{ textAlign:"center", marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"center", gap:6 }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:C.blue, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite` }}/>
+              <div key={i} style={{ width:8, height:8, borderRadius:"50%", background:C.cyan, animation:`pulse 1.2s ease-in-out ${i*0.2}s infinite` }}/>
             ))}
           </div>
           <style>{`@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}`}</style>
@@ -1309,8 +1343,8 @@ function App() {
   }
 
   if (screen === "loading") return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"'Inter',sans-serif" }}>
-      <div style={{ width:36, height:36, border:`3px solid ${C.border2}`, borderTop:`3px solid ${C.blue}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+    <div style={{ minHeight:"100vh", background:C.grad, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"'Inter',sans-serif" }}>
+      <div style={{ width:36, height:36, border:C.cyan}`, borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
