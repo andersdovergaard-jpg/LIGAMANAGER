@@ -1050,7 +1050,7 @@ function AuthScreen({ onAuth, onDemo }) {
 }
 
 //  JOIN SCREEN 
-function JoinScreen({ onJoin }) {
+function JoinScreen({ onJoin, onCreateGroup }) {
   const params = new URLSearchParams(window.location.search);
   const [code, setCode] = useState((params.get("kode") || "").toUpperCase());
   const [name, setName] = useState(params.get("navn") || "");
@@ -1111,6 +1111,13 @@ function JoinScreen({ onJoin }) {
         <Btn onClick={handleJoin} disabled={loading||code.length!==6||!name.trim()||!phone.trim()} full style={{ padding:16, fontSize:14, letterSpacing:2 }}>
           {loading ? "Henter..." : "Join gruppe"}
         </Btn>
+
+        <div style={{ marginTop:32, textAlign:"center", paddingTop:20, borderTop:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:12, color:C.g2, marginBottom:10 }}>Vil du oprette en ny gruppe?</div>
+          <button onClick={onCreateGroup} style={{ background:"none", border:`1px solid ${C.border2}`, borderRadius:8, color:C.g1, cursor:"pointer", fontSize:13, padding:"10px 20px", fontWeight:600 }}>
+            + Opret ny gruppe
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1411,7 +1418,7 @@ function App() {
     {screen==="home"    && <HomeScreen   saved={league} user={user} onNew={()=>setScreen("setup")} onJoin={()=>setScreen(league?.phase==="waiting"?"waiting":league?.phase==="draft"?"draft":"league")} onLogout={handleLogout} onJoinGroup={()=>setScreen("join")}/>}
     {screen==="setup"   && <SetupScreen  onBack={()=>setScreen("home")} onStart={handleCreateGroup}/>}
     {screen==="share"   && <ShareScreen  code={shareCode} groupName={league?.name} onContinue={()=>setScreen("waiting")}/>}
-    {screen==="join"    && <JoinScreen   onJoin={handleJoin}/>}
+    {screen==="join"    && <JoinScreen   onJoin={handleJoin} onCreateGroup={()=>setScreen("setup")}/>}
     {screen==="waiting" && league && <WaitingRoom league={league} user={user} onStartDraft={()=>setScreen("draft")} onUpdate={l=>{ setLeague(l); }}/>}
     {screen==="draft"   && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")}/>}
     {screen==="league"  && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")} user={user}/>}
