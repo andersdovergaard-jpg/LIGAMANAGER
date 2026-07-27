@@ -358,7 +358,7 @@ function SetupScreen({ onStart, onBack }) {
   const [selectedLeagues, setSelectedLeagues] = useState([...AMATEUR_LEAGUES]);
 
   const validPlayers = players.filter(n=>n.trim());
-  const canStart = name.trim() && gameMasterName.trim() && validPlayers.length >= 2 && selectedLeagues.length >= 2;
+  const canStart = name.trim() && gameMasterName.trim() && validPlayers.length >= 1 && selectedLeagues.length >= 2;
   const availableLeagues = TIER_AVAILABLE[tier];
   const maxLeagues = TIERS[tier].maxLeagues;
   const isAmateur = tier === "amateur";
