@@ -1338,12 +1338,13 @@ function App() {
 
   async function handleCreateGroup(leagueData) {
     const code = genCode();
-    const withCode = { ...leagueData, code, phase: "waiting", gameMaster: user?.name || "Game Master" };
+    const withCode = { ...leagueData, code, phase: "waiting" };
     setGroupCode(code);
     await persistGroup(code, withCode);
-    const updatedUser = { ...user, groupCode: code };
-    setUser(updatedUser);
-    await saveUser(updatedUser);
+    // Save game master as current user
+    const newUser = { name: leagueData.gameMaster, groupCode: code };
+    setUser(newUser);
+    await saveUser(newUser);
     setShareCode(code);
     setLeague(withCode);
     setScreen("share");
