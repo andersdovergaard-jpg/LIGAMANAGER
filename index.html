@@ -1044,18 +1044,22 @@ function JoinScreen({ onJoin, onCreateGroup }) {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
 
   const inp = { background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, borderRadius:8, color:C.white, padding:"12px 14px", fontSize:15, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" };
 
   async function handleJoin() {
     setError("");
+    setStatus("");
     if (code.length !== 6) return setError("Gruppekoden skal vaere 6 tegn");
     if (!name.trim()) return setError("Indtast dit navn");
     if (!phone.trim()) return setError("Indtast dit telefonnummer");
     setLoading(true);
+    setStatus("Henter gruppe...");
     const group = await loadGroup(code.trim().toUpperCase());
     setLoading(false);
-    if (!group) return setError("Ingen gruppe fundet - tjek koden og prøv igen");
+    if (!group) return setError("Ingen gruppe fundet med koden '" + code + "' - tjek koden og prøv igen");
+    setStatus("Gruppe fundet! Tilmelder...");
     const alreadyIn = group.players.some(p => p.name.toLowerCase() === name.trim().toLowerCase());
     if (!alreadyIn && (group.phase === "draft" && group.draftIdx > 0)) return setError("Draftet er allerede i gang - du kan ikke joine nu");
     if (!alreadyIn && group.phase === "season") return setError("Saesonen er allerede i gang - du kan ikke joine nu");
@@ -1075,6 +1079,7 @@ function JoinScreen({ onJoin, onCreateGroup }) {
         </div>
 
         {error && <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:8, padding:"10px 14px", fontSize:13, color:"#ff4d6d", marginBottom:16 }}>{error}</div>}
+        {status && !error && <div style={{ background:C.cyanD, border:`1px solid ${C.cyan}44`, borderRadius:8, padding:"10px 14px", fontSize:13, color:C.cyan, marginBottom:16 }}>{status}</div>}
 
         <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
           <input
