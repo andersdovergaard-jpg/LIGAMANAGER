@@ -1150,6 +1150,7 @@ function ShareScreen({ code, groupName, onContinue }) {
 
 //  WAITING ROOM 
 function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
+  const players = league.players || [];
   const isGameMaster = league.gameMaster === user?.name;
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1195,16 +1196,16 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
         <div style={{ marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
             <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase" }}>
-              Tilmeldte ({league.players.length})
+              Tilmeldte ({players.length})
             </div>
             <button onClick={refresh} style={{ background:"none", border:`1px solid ${C.border2}`, fontWeight:600 }}>
               {refreshing ? "" : "R Opdater"}
             </button>
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {league.players.map((p, i) => (
+            {players.map((p, i) => (
               <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${p.name === league.gameMaster ? C.cyan+"44" : C.border}`, borderRadius:10 }}>
-                <div style={{ width:32, height:32, border:`1px solid ${C.border2}`, flexShrink:0 }}>
+                <div style={{ width:32, height:32, borderRadius:"50%", background:p.name === league.gameMaster ? C.cyan : C.border2, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:14, color:p.name === league.gameMaster ? "#000" : C.g1, flexShrink:0 }}>
                   {p.name[0].toUpperCase()}
                 </div>
                 <div style={{ flex:1 }}>
@@ -1233,18 +1234,18 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
           <div>
             <div style={{ borderTop:`1px solid ${C.border}`, marginBottom:20 }}/>
             <div style={{ color:C.g1, fontSize:13, marginBottom:16, textAlign:"center" }}>
-              {league.players.length < 2
+              {players.length < 2
                 ? "Mindst 2 spillere skal være med før du kan starte"
-                : `${league.players.length} spillere klar  du kan starte draftet nu`}
+                : `${players.length} spillere klar - du kan starte draftet nu`}
             </div>
             <Btn
               onClick={async () => {
-                const updated = { ...league, phase:"draft", draftOrder: buildOrder(league.players, league.draftMode) };
+                const updated = { ...league, phase:"draft", draftOrder: buildOrder(players, league.draftMode) };
                 onUpdate(updated);
                 await saveGroup(league.code, updated);
                 onStartDraft();
               }}
-              disabled={league.players.length < 2}
+              disabled={players.length < 2}
               full
               style={{ padding:16, fontSize:15, letterSpacing:2 }}
             >
