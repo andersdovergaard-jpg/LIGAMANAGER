@@ -1192,7 +1192,10 @@ function WaitingRoom({ league, user, onStartDraft, onUpdate }) {
           Del koden med dine venner  de joiner på <strong style={{ color:C.white }}>liga-manager-kzcg.vercel.app</strong>
         </div>
 
-        {/* Players joined */}
+        {/* Debug info */}
+        <div style={{ background:"rgba(0,0,0,0.3)", borderRadius:8, padding:10, marginBottom:16, fontSize:11, color:C.g1, fontFamily:"monospace" }}>
+          Kode: {league.code || "?"} | Spillere: {players.length} | Fase: {league.phase || "?"} | GM: {league.gameMaster || "?"}
+        </div>
         <div style={{ marginBottom:24 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
             <div style={{ fontSize:10, letterSpacing:3, color:C.g2, fontWeight:800, textTransform:"uppercase" }}>
