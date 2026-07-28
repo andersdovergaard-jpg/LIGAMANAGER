@@ -95,23 +95,6 @@ const STANDINGS_2526 = {
 const SUPA_URL = "https://nvcrqiybutnededxsbtq.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52Y3JxaXlidXRuZWRlZHhzYnRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODU5NTksImV4cCI6MjEwMDQ2MTk1OX0.D_BXqaJPvbV8XO65DASAiPn9-fqJzxtU_0VV1AdL0vQ";
 
-const supa = {
-  async query(path, opts = {}) {
-    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-      headers: {
-        "apikey": SUPA_KEY,
-        "Authorization": `Bearer ${SUPA_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": opts.prefer || "return=representation",
-      },
-      ...opts,
-    });
-    if (!res.ok) { const e = await res.text(); console.error("Supabase error:", e); return null; }
-    const text = await res.text();
-    return text ? JSON.parse(text) : null;
-  },
-};
-
 async function loadUser() {
   try {
     const raw = localStorage.getItem("ligamanager-user-v1");
@@ -128,17 +111,20 @@ async function saveUser(u) {
 
 async function loadGroup(code) {
   try {
-    const rows = await supa.query(`groups?code=eq.${code}&select=data`, { method: "GET" });
+    const res = await fetch(`${SUPA_URL}/rest/v1/groups?code=eq.${code}&select=data`, {
+      method: "GET",
+      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
     return rows && rows.length > 0 ? rows[0].data : null;
-  } catch(e) { console.error(e); return null; }
+  } catch(e) { console.error("loadGroup error:", e); return null; }
 }
 
 async function saveGroup(code, data) {
   try {
-    // Upsert  insert or update
-    await supa.query("groups", {
+    const res = await fetch(`${SUPA_URL}/rest/v1/groups`, {
       method: "POST",
-      prefer: "resolution=merge-duplicates,return=representation",
       headers: {
         "apikey": SUPA_KEY,
         "Authorization": `Bearer ${SUPA_KEY}`,
@@ -147,7 +133,8 @@ async function saveGroup(code, data) {
       },
       body: JSON.stringify({ code, data, updated_at: new Date().toISOString() }),
     });
-  } catch(e) { console.error(e); }
+    if (!res.ok) { const e = await res.text(); console.error("saveGroup error:", e); }
+  } catch(e) { console.error("saveGroup fetch error:", e); }
 }
 
 function genCode() {
