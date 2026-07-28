@@ -123,18 +123,34 @@ async function loadGroup(code) {
 
 async function saveGroup(code, data) {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/groups`, {
+    // First try to update existing row
+    const patchRes = await fetch(`${SUPA_URL}/rest/v1/groups?code=eq.${code}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SUPA_KEY,
+        "Authorization": `Bearer ${SUPA_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+      },
+      body: JSON.stringify({ data, updated_at: new Date().toISOString() }),
+    });
+    if (patchRes.ok) {
+      const rows = await patchRes.json();
+      if (rows && rows.length > 0) return; // Updated successfully
+    }
+    // If no row exists yet, insert new one
+    const postRes = await fetch(`${SUPA_URL}/rest/v1/groups`, {
       method: "POST",
       headers: {
         "apikey": SUPA_KEY,
         "Authorization": `Bearer ${SUPA_KEY}`,
         "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates,return=representation",
+        "Prefer": "return=representation",
       },
       body: JSON.stringify({ code, data, updated_at: new Date().toISOString() }),
     });
-    if (!res.ok) { const e = await res.text(); console.error("saveGroup error:", e); }
-  } catch(e) { console.error("saveGroup fetch error:", e); }
+    if (!postRes.ok) { const e = await postRes.text(); console.error("saveGroup POST error:", e); }
+  } catch(e) { console.error("saveGroup error:", e); }
 }
 
 function genCode() {
