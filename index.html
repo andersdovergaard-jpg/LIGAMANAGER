@@ -614,10 +614,10 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
           {selLeague && (
             <Card>
               <Label>Vælg hold  {LEAGUES[selLeague].name}</Label>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 {TEAMS[selLeague].map(team=>{
                   const t = taken[selLeague].includes(team);
-                  return <button key={team} onClick={()=>!t&&pick(selLeague,team)} style={{ padding:"8px 12px", borderRadius:6, fontSize:13, fontWeight:700, cursor:t?"not-allowed":"pointer", background:t?C.bg:C.surface, border:`1px solid ${C.border2}`, textDecoration:t?"line-through":"none" }}>{team}</button>;
+                  return <button key={team} onClick={()=>!t&&pick(selLeague,team)} style={{ padding:"10px 14px", borderRadius:6, fontSize:14, fontWeight:700, cursor:t?"not-allowed":"pointer", background:t?"rgba(0,0,0,0.2)":"rgba(255,255,255,0.08)", border:`1px solid ${t?"rgba(255,255,255,0.06)":LEAGUES[selLeague].accent+"66"}`, color:t?"rgba(255,255,255,0.25)":LEAGUES[selLeague].accent, textDecoration:t?"line-through":"none", textAlign:"left", width:"100%" }}>{team}</button>;
                 })}
               </div>
             </Card>
