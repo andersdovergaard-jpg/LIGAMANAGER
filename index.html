@@ -1277,21 +1277,33 @@ function App() {
         setUser(u);
         if (u.groupCode) {
           const g = await loadGroup(u.groupCode);
-          if (g) { setLeague(g); setGroupCode(u.groupCode); setScreen("home"); return; }
+          if (g) {
+            setLeague(g);
+            setGroupCode(u.groupCode);
+            // Send to correct screen based on phase
+            if (g.phase === "waiting") setScreen("waiting");
+            else if (g.phase === "draft") setScreen("draft");
+            else if (g.phase === "season") setScreen("league");
+            else setScreen("waiting");
+            return;
+          }
         }
-        setScreen("home");
+        setScreen("join");
       } else {
         setScreen("join");
       }
     });
   }, []);
 
-  // Poll Supabase every 15 seconds for updates from other players
+  // Poll Supabase every 15 seconds — only update league data, never change screen
   useEffect(() => {
     if (!groupCode) return;
     const interval = setInterval(async () => {
       const g = await loadGroup(groupCode);
-      if (g) { setLeague(g); setLastUpdated(new Date()); }
+      if (g) {
+        setLeague(g);
+        setLastUpdated(new Date());
+      }
     }, 15000);
     return () => clearInterval(interval);
   }, [groupCode]);
