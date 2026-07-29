@@ -492,8 +492,15 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
   const dispPlayer = viewAs ? players.find(p=>p.id===viewAs) : curPicker;
 
   const [justPicked, setJustPicked] = useState(null); // { nextPlayer, team, league }
+  const [confirmPick, setConfirmPick] = useState(null); // { lid, team } — waiting for confirmation
 
   function pick(lid, team) {
+    setConfirmPick({ lid, team });
+  }
+
+  function confirmPickFn() {
+    const { lid, team } = confirmPick;
+    setConfirmPick(null);
     const np = { ...picks, [curId]: { ...(picks[curId]||{}), [lid]:team } };
     const done = isDraftDone(players, np, activeLeagues);
     const newIdx = draftIdx + 1;
@@ -514,7 +521,9 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
     const msg = `LigaManager - Det er din tur!\n\n${justPicked.nextPlayer.name}, du skal nu vaelge dit naeste hold i ${league.name}.\n\nTryk her for at aabne appen direkte: ${url}`;
     const raw = justPicked.nextPlayer.phone || "";
     const digits = raw.replace(/[\s\-\+\(\)]/g, "");
-    const intl = digits.startsWith("45") ? digits : digits.startsWith("0") ? "45" + digits.slice(1) : "45" + digits;
+    // If number starts with country code (2+ digits before 8-digit number), use as-is
+    // Otherwise assume Danish (+45) as fallback
+    const intl = digits.length >= 10 ? digits : digits.startsWith("0") ? digits.slice(1) : "45" + digits;
     const waUrl = digits ? `https://wa.me/${intl}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, "_blank");
     setJustPicked(null);
@@ -546,20 +555,34 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
           </div>
         </div>
 
-        {/* WhatsApp notifikation popup */}
-        {justPicked && (
-          <div style={{ background:`linear-gradient(135deg,#25D36622,${C.card})`, border:`1px solid #25D36644`, borderRadius:12, padding:16, marginBottom:16, boxShadow:`0 0 24px #25D36622` }}>
-            <div style={{ fontSize:10, letterSpacing:3, color:"#25D366", fontWeight:800, textTransform:"uppercase", marginBottom:8 }}>Nu er det</div>
-            <div style={{ fontWeight:900, fontSize:20, marginBottom:4 }}>{justPicked.nextPlayer.name}s tur</div>
-            <div style={{ color:C.g1, fontSize:13, marginBottom:14 }}>Send en besked så de ved det er deres tur</div>
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={sendWhatsApp} style={{ flex:1, background:"#25D366", border:"none", borderRadius:8, padding:"11px 16px", fontWeight:800, fontSize:13, cursor:"pointer", color:"#000", letterSpacing:.5 }}>
-                [msg] Send WhatsApp
-              </button>
-              <button onClick={()=>setJustPicked(null)} style={{ background:C.card, backdropFilter:"blur(8px)", border:`1px solid ${C.border2}`, color:C.g1 }}>
-                Spring over
-              </button>
+        {/* Confirm pick popup */}
+        {confirmPick && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+            <div style={{ background:"#1e1a45", border:`1px solid ${C.cyan}55`, borderRadius:16, padding:28, maxWidth:340, width:"100%", textAlign:"center" }}>
+              <div style={{ fontSize:11, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:12 }}>Bekræft dit valg</div>
+              <div style={{ fontSize:28, fontWeight:900, color:C.white, marginBottom:4 }}>{confirmPick.team}</div>
+              <div style={{ fontSize:14, color:C.g1, marginBottom:24 }}>{LEAGUES[confirmPick.lid].name}</div>
+              <div style={{ display:"flex", gap:10 }}>
+                <button onClick={()=>setConfirmPick(null)} style={{ flex:1, padding:"12px", borderRadius:8, background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border2}`, color:C.g1, cursor:"pointer", fontWeight:700, fontSize:14 }}>
+                  Fortryd
+                </button>
+                <button onClick={confirmPickFn} style={{ flex:1, padding:"12px", borderRadius:8, background:C.gradH, border:"none", color:"#fff", cursor:"pointer", fontWeight:800, fontSize:14, letterSpacing:1 }}>
+                  Bekræft
+                </button>
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* WhatsApp sticky bar */}
+        {justPicked && (
+          <div style={{ position:"fixed", bottom:0, left:0, right:0, padding:"12px 16px", background:"rgba(15,12,41,0.95)", backdropFilter:"blur(12px)", borderTop:`1px solid ${C.border}`, zIndex:50, display:"flex", gap:10, alignItems:"center" }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:12, color:"#25D366", fontWeight:700 }}>Naeste: {justPicked.nextPlayer.name}</div>
+              <div style={{ fontSize:11, color:C.g2 }}>Tryk naar du er klar til at sende</div>
+            </div>
+            <button onClick={sendWhatsApp} style={{ background:"#25D366", border:"none", borderRadius:8, padding:"10px 14px", fontWeight:800, fontSize:13, cursor:"pointer", color:"#000" }}>Send WhatsApp</button>
+            <button onClick={()=>setJustPicked(null)} style={{ background:"none", border:"none", color:C.g2, cursor:"pointer", fontSize:20, paddingLeft:8 }}>x</button>
           </div>
         )}
 
