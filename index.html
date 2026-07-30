@@ -591,8 +591,18 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
           <Label>Se som</Label>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {([...new Set(draftOrder)].map(id => players.find(p => p.id === id)).filter(Boolean)).map(p=>{
-              const active = viewAs===p.id||(!viewAs&&p.id===curId);
-              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", border:`1px solid ${active?C.cyan+"66":C.border}`, letterSpacing:.5 }}>{p.name}</button>;
+              const isCurrent = p.id === curId;
+              // Current round: how many picks have been made this round
+              const roundIdx = Math.floor(draftIdx / players.length);
+              const picksThisRound = Object.keys(picks[p.id] || {}).length;
+              const hasPickedThisRound = picksThisRound > roundIdx;
+              const active = viewAs===p.id||(!viewAs&&isCurrent);
+              const bgColor = isCurrent ? "#ff69b4" : hasPickedThisRound ? C.green : "rgba(255,255,255,0.06)";
+              const borderColor = isCurrent ? "#ff69b4aa" : hasPickedThisRound ? C.green+"aa" : C.border;
+              const textColor = isCurrent ? "#000" : hasPickedThisRound ? "#000" : C.g1;
+              const fontSize = isCurrent ? 14 : 12;
+              const fontWeight = isCurrent ? 900 : hasPickedThisRound ? 700 : 600;
+              return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding: isCurrent ? "8px 16px" : "6px 12px", border:`1px solid ${borderColor}`, borderRadius:8, background:bgColor, color:textColor, cursor:"pointer", fontSize, fontWeight, letterSpacing:.5, transition:"all .15s" }}>{p.name}</button>;
             })}
           </div>
         </div>
