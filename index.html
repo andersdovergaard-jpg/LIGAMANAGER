@@ -610,17 +610,21 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
         {/* Player picks */}
         <Card style={{ marginBottom:16 }}>
           <Label>{dispPlayer?.name}s hold</Label>
+          {activeLeagues.filter(lid => picks[dispPlayer?.id]?.[lid]).length === 0 && (
+            <div style={{ color:C.g2, fontSize:13, padding:"8px 0" }}>Ingen hold valgt endnu</div>
+          )}
           {activeLeagues.map(lid=>{
             const team = picks[dispPlayer?.id]?.[lid];
+            if (!team) return null;
             const l = LEAGUES[lid];
             return (
               <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                 <span style={{ fontSize:20 }}>{l.flag}</span>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
-                  <div style={{ fontWeight:700, fontSize:14, color:team?C.white:C.g2, marginTop:2 }}>{team||"Ikke valgt"}</div>
+                  <div style={{ fontWeight:700, fontSize:14, color:C.white, marginTop:2 }}>{team}</div>
                 </div>
-                {team && <span style={{ color:C.green }}>v</span>}
+                <span style={{ color:C.green }}>v</span>
               </div>
             );
           })}
