@@ -739,7 +739,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
   }
 
   const isGameMaster = user && league.gameMaster && user.name?.toLowerCase() === league.gameMaster?.toLowerCase();
-  const TABS=[{id:"generelt",label:"Generelt"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
+  const TABS=[{id:"generelt",label:"Generelt"},{id:"ligaer",label:"Ligaer"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
 
   return (
     <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
@@ -785,6 +785,44 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab==="ligaer" && (
+          <div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr", gap:8 }}>
+              {activeLeagues.map(lid => {
+                const l = LEAGUES[lid];
+                const allTeams = TEAMS[lid] || [];
+                // Find taken teams with owner
+                const takenTeams = players
+                  .filter(p => picks[p.id]?.[lid])
+                  .map(p => ({ team: picks[p.id][lid], owner: p.name.split(" ")[0] }));
+                const takenNames = takenTeams.map(t => t.team);
+                const freeTeams = allTeams.filter(t => !takenNames.includes(t)).sort();
+                return (
+                  <div key={lid} style={{ background:`linear-gradient(180deg,${l.color}cc,${C.card})`, border:`1px solid ${l.accent}44`, borderRadius:10, overflow:"hidden" }}>
+                    <div style={{ padding:"8px 8px 6px", borderBottom:`1px solid ${l.accent}33`, display:"flex", alignItems:"center", gap:6 }}>
+                      <span style={{ fontSize:14 }}>{l.flag}</span>
+                      <span style={{ fontSize:10, fontWeight:800, color:l.accent, letterSpacing:0.5, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{l.name}</span>
+                    </div>
+                    <div style={{ padding:"6px 0", maxHeight:400, overflowY:"auto" }}>
+                      {takenTeams.map(({team, owner}) => (
+                        <div key={team} style={{ padding:"4px 8px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid rgba(255,255,255,0.05)`, background:`${l.accent}15` }}>
+                          <span style={{ fontSize:10, fontWeight:700, color:l.accent }}>{team}</span>
+                          <span style={{ fontSize:9, color:C.cyan, fontWeight:700, flexShrink:0, marginLeft:4 }}>{owner}</span>
+                        </div>
+                      ))}
+                      {freeTeams.map(team => (
+                        <div key={team} style={{ padding:"4px 8px", borderBottom:`1px solid rgba(255,255,255,0.03)` }}>
+                          <span style={{ fontSize:10, color:C.g2 }}>{team}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
