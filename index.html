@@ -739,7 +739,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
   }
 
   const isGameMaster = user && league.gameMaster && user.name?.toLowerCase() === league.gameMaster?.toLowerCase();
-  const TABS=[{id:"generelt",label:"Generelt"},{id:"ligaer",label:"Ligaer"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
+  const TABS=[{id:"generelt",label:"Spillere"},{id:"ligaer",label:"Ligaer"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"}];
 
   return (
     <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
@@ -960,31 +960,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
           </div>
         )}
 
-        {tab==="teams" && (
-          <div>
-            {players.map(p=>(
-              <Card key={p.id} style={{ marginBottom:14 }}>
-                <div style={{ fontWeight:900, fontSize:18, letterSpacing:-0.5, marginBottom:14 }}>{p.name}</div>
-                {activeLeagues.map(lid=>{
-                  const team=picks[p.id]?.[lid];
-                  const pos=(standings[lid]||[]).indexOf(team);
-                  const pts=pos!==-1?pos+1:null;
-                  const l=LEAGUES[lid];
-                  return (
-                    <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ fontSize:20 }}>{l.flag}</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
-                        <div style={{ fontWeight:700, fontSize:14, color:team?C.white:C.g2, marginTop:2 }}>{team||"Ikke valgt"}</div>
-                      </div>
-                      {pts&&<div style={{ textAlign:"right" }}><span style={{ fontSize:20, fontWeight:900 }}>{pts}</span><span style={{ fontSize:10, color:C.g2, marginLeft:2 }}>pt</span></div>}
-                    </div>
-                  );
-                })}
-              </Card>
-            ))}
-          </div>
-        )}
+
       </div>
     </div>
   );
