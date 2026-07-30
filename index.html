@@ -653,7 +653,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
 
 //  LEAGUE 
 function LeagueScreen({ league, onUpdate, onDraft, user }) {
-  const [tab, setTab] = useState("standings");
+  const [tab, setTab] = useState("generelt");
   const { players, picks, standings, activeLeagues = LEAGUE_IDS } = league;
 
   const scores = players.map(p=>({
@@ -739,7 +739,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
   }
 
   const isGameMaster = user && league.gameMaster && user.name?.toLowerCase() === league.gameMaster?.toLowerCase();
-  const TABS=[{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
+  const TABS=[{id:"generelt",label:"Generelt"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"teams",label:"Hold"}];
 
   return (
     <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
@@ -760,6 +760,35 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
       </div>
 
       <div style={{ maxWidth:520, margin:"0 auto", padding:"20px 16px 56px" }}>
+
+        {tab==="generelt" && (
+          <div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+              {players.map((p, i) => {
+                const playerPicks = picks[p.id] || {};
+                return (
+                  <div key={p.id} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 8px", backdropFilter:"blur(8px)" }}>
+                    <div style={{ fontWeight:800, fontSize:12, color:C.cyan, marginBottom:8, letterSpacing:0.5, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name.split(" ")[0]}</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                      {activeLeagues.map(lid => {
+                        const team = playerPicks[lid];
+                        const l = LEAGUES[lid];
+                        return (
+                          <div key={lid} style={{ display:"flex", alignItems:"center", gap:4 }}>
+                            <span style={{ fontSize:10, flexShrink:0 }}>{l.flag}</span>
+                            <span style={{ fontSize:10, color:team ? l.accent : C.g2, fontWeight:team ? 700 : 400, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                              {team || "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {tab==="standings" && (
           <div>
