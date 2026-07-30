@@ -590,7 +590,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
         <div style={{ marginBottom:16 }}>
           <Label>Se som</Label>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {players.map(p=>{
+            {([...new Set(draftOrder)].map(id => players.find(p => p.id === id)).filter(Boolean)).map(p=>{
               const active = viewAs===p.id||(!viewAs&&p.id===curId);
               return <button key={p.id} onClick={()=>setViewAs(viewAs===p.id?null:p.id)} style={{ padding:"6px 12px", border:`1px solid ${active?C.cyan+"66":C.border}`, letterSpacing:.5 }}>{p.name}</button>;
             })}
@@ -764,7 +764,10 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
         {tab==="generelt" && (
           <div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-              {players.map((p, i) => {
+              {(league.draftOrder
+                ? [...new Set(league.draftOrder)].map(id => players.find(p => p.id === id)).filter(Boolean)
+                : players
+              ).map((p, i) => {
                 const playerPicks = picks[p.id] || {};
                 return (
                   <div key={p.id} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 8px", backdropFilter:"blur(8px)" }}>
