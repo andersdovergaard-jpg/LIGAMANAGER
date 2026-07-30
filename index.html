@@ -917,8 +917,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
             </div>
           </div>
         )}
-
-
+        {tab==="tables" && (
           <div>
             <div style={{ color:C.g1, fontSize:12, marginBottom:20 }}>Flyt hold op/ned for at opdatere placeringer manuelt.</div>
             {!isGameMaster && (
