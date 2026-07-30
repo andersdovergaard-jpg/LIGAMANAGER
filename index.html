@@ -479,7 +479,7 @@ function SetupScreen({ onStart, onBack }) {
 }
 
 //  DRAFT 
-function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
+function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
   const [selLeague, setSelLeague] = useState(null);
   const [viewAs, setViewAs] = useState(null);
   const { draftOrder, draftIdx, picks, players, standings, activeLeagues = LEAGUE_IDS } = league;
@@ -627,7 +627,8 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
         </Card>
 
         {/* League + team picker */}
-        {!viewAs && <>
+        {/* Only show league/team picker if it's THIS user's turn */}
+        {!viewAs && user && user.name && curPicker && user.name.toLowerCase() === curPicker.name.toLowerCase() && <>
           <Label>Vælg liga</Label>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
             {remainL.map(lid=>{
@@ -656,6 +657,11 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague }) {
             </Card>
           )}
         </>}
+        {!viewAs && user && user.name && curPicker && user.name.toLowerCase() !== curPicker.name.toLowerCase() && (
+          <div style={{ background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 16px", textAlign:"center", color:C.g1, fontSize:14 }}>
+            Det er ikke din tur - vent på at <span style={{ color:"#ff69b4", fontWeight:700 }}>{curPicker.name}</span> vælger
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1508,7 +1514,7 @@ function App() {
     {screen==="share"   && <ShareScreen  code={shareCode} groupName={league?.name} onContinue={()=>setScreen("waiting")}/>}
     {screen==="join"    && <JoinScreen   onJoin={handleJoin} onCreateGroup={()=>setScreen("setup")}/>}
     {screen==="waiting" && league && <WaitingRoom league={league} user={user} onStartDraft={()=>setScreen("draft")} onUpdate={l=>{ setLeague(l); }}/>}
-    {screen==="draft"   && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")}/>}
+    {screen==="draft"   && league && <DraftScreen  league={league} onUpdate={update} onFinish={()=>{ update({phase:"season"}); setScreen("league"); }} onLeague={()=>setScreen("league")} user={user}/>}
     {screen==="league"  && league && <LeagueScreen league={league} onUpdate={update} onDraft={()=>setScreen("draft")} user={user}/>}
   </>;
 }
