@@ -749,7 +749,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
 
         {tab==="generelt" && (
           <div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
               {(league.draftOrder
                 ? [...new Set(league.draftOrder)].map(id => players.find(p => p.id === id)).filter(Boolean)
                 : players
