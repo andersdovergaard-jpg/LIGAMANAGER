@@ -501,9 +501,13 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
     const { lid, team } = confirmPick;
     setConfirmPick(null);
     const np = { ...picks, [curId]: { ...(picks[curId]||{}), [lid]:team } };
+    // Also save pick order: pickOrder[playerId] = [...lids in order picked]
+    const pickOrder = league.pickOrder || {};
+    const playerOrder = [...(pickOrder[curId] || []), lid];
+    const newPickOrder = { ...pickOrder, [curId]: playerOrder };
     const done = isDraftDone(players, np, activeLeagues);
     const newIdx = draftIdx + 1;
-    onUpdate({ picks:np, draftIdx:newIdx, phase:done?"season":"draft" });
+    onUpdate({ picks:np, pickOrder:newPickOrder, draftIdx:newIdx, phase:done?"season":"draft" });
     setSelLeague(null);
     if (done) { onFinish(); return; }
   }
@@ -579,21 +583,29 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
           {activeLeagues.filter(lid => picks[dispPlayer?.id]?.[lid]).length === 0 && (
             <div style={{ color:C.g2, fontSize:13, padding:"8px 0" }}>Ingen hold valgt endnu</div>
           )}
-          {activeLeagues.map(lid=>{
-            const team = picks[dispPlayer?.id]?.[lid];
-            if (!team) return null;
-            const l = LEAGUES[lid];
-            return (
-              <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
-                <span style={{ fontSize:20 }}>{l.flag}</span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
-                  <div style={{ fontWeight:700, fontSize:14, color:C.white, marginTop:2 }}>{team}</div>
+          {(() => {
+            const pid = dispPlayer?.id;
+            const playerPicks = picks[pid] || {};
+            const pickOrder = (league.pickOrder || {})[pid] || [];
+            // Use pickOrder if available, otherwise fall back to activeLeagues order
+            const orderedLids = pickOrder.length > 0
+              ? [...pickOrder, ...activeLeagues.filter(lid => !pickOrder.includes(lid) && playerPicks[lid])]
+              : activeLeagues.filter(lid => playerPicks[lid]);
+            return orderedLids.filter(lid => playerPicks[lid]).map((lid, i) => {
+              const team = playerPicks[lid];
+              const l = LEAGUES[lid];
+              return (
+                <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                  <span style={{ fontSize:20 }}>{l.flag}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
+                    <div style={{ fontWeight:700, fontSize:14, color:C.white, marginTop:2 }}>{team}</div>
+                  </div>
+                  <span style={{ fontSize:10, color:C.cyan, fontWeight:700 }}>{i+1}. runde</span>
                 </div>
-                <span style={{ color:C.green }}>v</span>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </Card>
 
         {/* League + team picker */}
