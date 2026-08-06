@@ -737,7 +737,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
   }
 
   const isGameMaster = user && league.gameMaster && user.name?.toLowerCase() === league.gameMaster?.toLowerCase();
-  const TABS=[{id:"generelt",label:"Spillere"},{id:"ligaer",label:"Ligaer"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"}];
+  const TABS=[{id:"generelt",label:"Spillere"},{id:"ligaer",label:"Ligaer"},{id:"standings",label:"Rangliste"},{id:"udvikling",label:"Udvikling"},{id:"tables",label:"Tabeller"},{id:"admin",label:"Admin"}];
 
   return (
     <div style={{ minHeight:"100vh", background:C.grad, color:C.white, fontFamily:"'Inter','Helvetica Neue',sans-serif", position:"relative" }}>
@@ -957,6 +957,81 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
           </div>
         )}
 
+        {tab==="admin" && (
+          <div>
+            {!isGameMaster && (
+              <div style={{ background:"rgba(255,0,0,0.1)", border:"1px solid rgba(255,0,0,0.3)", borderRadius:8, padding:"12px 16px", color:"#ff4d6d", fontSize:13 }}>
+                Kun game master kan se admin-panelet.
+              </div>
+            )}
+            {isGameMaster && (
+              <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+                {/* Current turn + move turn */}
+                <Card>
+                  <Label>Tur-styring</Label>
+                  <div style={{ fontSize:13, color:C.g1, marginBottom:12 }}>
+                    Nuværende draftIdx: <span style={{ color:C.cyan, fontWeight:800 }}>{league.draftIdx}</span>
+                    {" — "}Nu vælger: <span style={{ color:"#ff69b4", fontWeight:800 }}>{players.find(p=>p.id===league.draftOrder?.[league.draftIdx])?.name || "?"}</span>
+                  </div>
+                  <div style={{ fontSize:11, color:C.g2, marginBottom:8, letterSpacing:1, textTransform:"uppercase" }}>Giv turen til:</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                    {players.map(p => {
+                      const picksCount = Object.keys(picks[p.id]||{}).length;
+                      // Find next position for this player
+                      const nextIdx = (league.draftOrder||[]).findIndex((id,i) => id===p.id && i>=picksCount*players.length);
+                      // Find their next position after current picks
+                      const positions = (league.draftOrder||[]).map((id,i)=>({id,i})).filter(x=>x.id===p.id).map(x=>x.i);
+                      const nextPos = positions[picksCount] ?? -1;
+                      return (
+                        <button key={p.id} onClick={async () => {
+                          if (!window.confirm(`Giv turen til ${p.name} (position ${nextPos})?`)) return;
+                          const updated = { ...league, draftIdx: nextPos };
+                          onUpdate(updated);
+                          await saveGroup(league.code, updated);
+                        }} style={{ padding:"8px 12px", borderRadius:8, background:"rgba(255,255,255,0.08)", border:`1px solid ${C.border2}`, color:C.white, cursor:"pointer", fontSize:12, fontWeight:700 }}>
+                          {p.name} <span style={{ color:C.g2, fontSize:10 }}>({picksCount} valgt → pos {nextPos})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* Delete a specific pick */}
+                <Card>
+                  <Label>Slet et valg</Label>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {players.map(p => {
+                      const playerPicks = picks[p.id]||{};
+                      const lids = Object.keys(playerPicks);
+                      if (lids.length === 0) return null;
+                      return (
+                        <div key={p.id} style={{ borderBottom:`1px solid ${C.border}`, paddingBottom:8 }}>
+                          <div style={{ fontWeight:800, fontSize:13, color:C.cyan, marginBottom:6 }}>{p.name}</div>
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                            {lids.map(lid => (
+                              <button key={lid} onClick={async () => {
+                                if (!window.confirm(`Slet ${p.name}s valg: ${playerPicks[lid]} (${LEAGUES[lid]?.name})?`)) return;
+                                const newPlayerPicks = {...playerPicks};
+                                delete newPlayerPicks[lid];
+                                const updated = { ...league, picks: { ...picks, [p.id]: newPlayerPicks } };
+                                onUpdate(updated);
+                                await saveGroup(league.code, updated);
+                              }} style={{ padding:"5px 10px", borderRadius:6, background:"rgba(255,77,109,0.15)", border:"1px solid rgba(255,77,109,0.4)", color:"#ff4d6d", cursor:"pointer", fontSize:11, fontWeight:700 }}>
+                                {LEAGUES[lid]?.flag} {playerPicks[lid]} ×
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
