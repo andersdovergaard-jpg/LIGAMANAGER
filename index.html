@@ -92,8 +92,6 @@ const STANDINGS_2526 = {
 };
 
 //  Supabase 
-const APP_VERSION = "2.0";
-
 const SUPA_URL = "https://nvcrqiybutnededxsbtq.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52Y3JxaXlidXRuZWRlZHhzYnRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODU5NTksImV4cCI6MjEwMDQ2MTk1OX0.D_BXqaJPvbV8XO65DASAiPn9-fqJzxtU_0VV1AdL0vQ";
 
@@ -282,7 +280,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
           <h1 style={{ margin:"0 0 4px", fontSize:54, fontWeight:900, letterSpacing:-2, lineHeight:1 }}>
             LIGA<span style={{ color:C.cyan }}>MANAGER</span>
           </h1>
-          <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:14 }}>Vælg hold · Følg ligaer · Vind med færrest point</p>
+          <p style={{ color:C.g1, fontSize:12, letterSpacing:2, textTransform:"uppercase", marginTop:14 }}>Vælg hold - Følg ligaer - Vind med færrest point</p>
         </div>
       </div>
 
@@ -292,7 +290,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
             <div style={{ fontSize:10, letterSpacing:3, color:C.cyan, fontWeight:800, textTransform:"uppercase", marginBottom:6 }}>Aktiv gruppe</div>
             <div style={{ fontWeight:900, fontSize:22, letterSpacing:-0.5 }}>{saved.name}</div>
             <div style={{ color:C.g1, fontSize:13, marginTop:4, marginBottom:14 }}>
-              {saved.players.length} spillere · {saved.phase==="draft"?"Draft igangværende":"Sæson aktiv"}
+              {saved.players.length} spillere - {saved.phase==="draft"?"Draft igangværende":"Sæson aktiv"}
             </div>
             <div style={{ color:C.cyan, fontWeight:800, fontSize:12, letterSpacing:1.5, textTransform:"uppercase" }}>Fortsæt </div>
           </div>
@@ -312,7 +310,7 @@ function HomeScreen({ onNew, onJoin, onLogout, onDemo, onJoinGroup, saved, user 
             <div key={key} style={{ marginBottom:20 }}>
               <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                 <span style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:t.color, textTransform:"uppercase" }}>{t.name}</span>
-                <span style={{ fontSize:11, color:C.g2 }}>{t.price === 0 ? "Gratis" : `${t.price} kr/spiller`} · {key === "amateur" ? "5 faste ligaer" : `Vælg frit op til ${t.maxLeagues} ligaer`}</span>
+                <span style={{ fontSize:11, color:C.g2 }}>{t.price === 0 ? "Gratis" : `${t.price} kr/spiller`} - {key === "amateur" ? "5 faste ligaer" : `Vælg frit op til ${t.maxLeagues} ligaer`}</span>
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
                 {showcaseLeagues.map(lid => {
@@ -402,7 +400,7 @@ function SetupScreen({ onStart, onBack }) {
                 <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${tier===key?t.color:C.g2}`, background:tier===key?t.color:"transparent", flexShrink:0 }}/>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:800, fontSize:14, color:tier===key?t.color:C.white }}>{t.name}</div>
-                  <div style={{ color:C.g1, fontSize:12 }}>Gratis nu · Op til {t.maxLeagues} ligaer · {t.sidegames} sidespil</div>
+                  <div style={{ color:C.g1, fontSize:12 }}>Gratis nu - Op til {t.maxLeagues} ligaer - {t.sidegames} sidespil</div>
                 </div>
               </div>
             ))}
@@ -876,7 +874,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
               </div>
             );
             })}
-            <div style={{ textAlign:"center", color:C.g2, fontSize:11, marginTop:20, letterSpacing:1.5, textTransform:"uppercase" }}>Færrest point vinder · Point = slutplacering</div>
+            <div style={{ textAlign:"center", color:C.g2, fontSize:11, marginTop:20, letterSpacing:1.5, textTransform:"uppercase" }}>Færrest point vinder - Point = slutplacering</div>
           </div>
         )}
 
@@ -921,7 +919,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
             </div>
 
             <div style={{ textAlign:"center", color:C.g2, fontSize:11, marginTop:20, letterSpacing:1.5, textTransform:"uppercase" }}>
-              Simuleret data · Opdateres automatisk med live API
+              Simuleret data - Opdateres automatisk med live API
             </div>
           </div>
         )}
