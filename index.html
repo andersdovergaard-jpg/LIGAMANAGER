@@ -1005,7 +1005,74 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
                   </div>
                 </Card>
 
-                {/* Delete a specific pick */}
+                {/* Pick hold for a player */}
+                <Card>
+                  <Label>Vælg hold for en spiller</Label>
+                  {(() => {
+                    const [adminPlayer, setAdminPlayer] = React.useState(null);
+                    const [adminLeague, setAdminLeague] = React.useState(null);
+                    const taken = Object.fromEntries(activeLeagues.map(lid => [lid, players.map(p => picks[p.id]?.[lid]).filter(Boolean)]));
+                    return (
+                      <div>
+                        {/* Step 1: Pick player */}
+                        <div style={{ fontSize:11, color:C.g2, marginBottom:6, textTransform:"uppercase", letterSpacing:1 }}>Spiller</div>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:12 }}>
+                          {players.map(p => (
+                            <button key={p.id} onClick={() => { setAdminPlayer(p); setAdminLeague(null); }}
+                              style={{ padding:"6px 12px", borderRadius:8, background:adminPlayer?.id===p.id?"#ff69b4":"rgba(255,255,255,0.08)", border:`1px solid ${adminPlayer?.id===p.id?"#ff69b4":C.border2}`, color:adminPlayer?.id===p.id?"#000":C.white, cursor:"pointer", fontSize:12, fontWeight:700 }}>
+                              {p.name}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Step 2: Pick league */}
+                        {adminPlayer && (
+                          <>
+                            <div style={{ fontSize:11, color:C.g2, marginBottom:6, textTransform:"uppercase", letterSpacing:1 }}>Liga</div>
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:12 }}>
+                              {activeLeagues.map(lid => {
+                                const l = LEAGUES[lid];
+                                const alreadyPicked = picks[adminPlayer.id]?.[lid];
+                                return (
+                                  <button key={lid} onClick={() => setAdminLeague(lid)}
+                                    style={{ padding:"6px 10px", borderRadius:8, background:adminLeague===lid?l.accent:alreadyPicked?"rgba(0,200,0,0.15)":"rgba(255,255,255,0.08)", border:`1px solid ${adminLeague===lid?l.accent:alreadyPicked?"#00c80044":C.border2}`, color:adminLeague===lid?"#000":alreadyPicked?C.green:C.white, cursor:"pointer", fontSize:11, fontWeight:700 }}>
+                                    {l.flag} {lid} {alreadyPicked ? `(${alreadyPicked})` : ""}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                        {/* Step 3: Pick team */}
+                        {adminPlayer && adminLeague && (
+                          <>
+                            <div style={{ fontSize:11, color:C.g2, marginBottom:6, textTransform:"uppercase", letterSpacing:1 }}>Hold i {LEAGUES[adminLeague].name}</div>
+                            <div style={{ display:"flex", flexDirection:"column", gap:4, maxHeight:300, overflowY:"auto" }}>
+                              {(TEAMS[adminLeague]||[]).map(team => {
+                                const takenBy = players.find(p => picks[p.id]?.[adminLeague] === team);
+                                const isOwn = takenBy?.id === adminPlayer.id;
+                                return (
+                                  <button key={team} onClick={async () => {
+                                    if (takenBy && !isOwn) { alert(`${team} er allerede valgt af ${takenBy.name}`); return; }
+                                    if (!window.confirm(`Vælg ${team} for ${adminPlayer.name}?`)) return;
+                                    const np = { ...picks, [adminPlayer.id]: { ...(picks[adminPlayer.id]||{}), [adminLeague]: team } };
+                                    const updated = { ...league, picks: np };
+                                    onUpdate(updated);
+                                    await saveGroup(league.code, updated);
+                                    setAdminLeague(null);
+                                  }} style={{ padding:"8px 12px", borderRadius:6, textAlign:"left", background:isOwn?"rgba(0,200,0,0.15)":takenBy?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.08)", border:`1px solid ${isOwn?"#00c80044":takenBy?"rgba(255,255,255,0.05)":LEAGUES[adminLeague].accent+"44"}`, color:isOwn?C.green:takenBy?C.g2:LEAGUES[adminLeague].accent, cursor:takenBy&&!isOwn?"not-allowed":"pointer", fontSize:12, fontWeight:700 }}>
+                                    {team} {takenBy && !isOwn ? `— ${takenBy.name}` : ""}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </Card>
+
+
                 <Card>
                   <Label>Slet et valg</Label>
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
