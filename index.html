@@ -660,6 +660,8 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
 //  LEAGUE 
 function LeagueScreen({ league, onUpdate, onDraft, user }) {
   const [tab, setTab] = useState("generelt");
+  const [adminPlayer, setAdminPlayer] = useState(null);
+  const [adminLeague, setAdminLeague] = useState(null);
   const { players, picks, standings, activeLeagues = LEAGUE_IDS } = league;
 
   const scores = players.map(p=>({
@@ -1008,9 +1010,8 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
                 {/* Pick hold for a player */}
                 <Card>
                   <Label>Vælg hold for en spiller</Label>
+                  <div>
                   {(() => {
-                    const [adminPlayer, setAdminPlayer] = React.useState(null);
-                    const [adminLeague, setAdminLeague] = React.useState(null);
                     const taken = Object.fromEntries(activeLeagues.map(lid => [lid, players.map(p => picks[p.id]?.[lid]).filter(Boolean)]));
                     return (
                       <div>
@@ -1070,6 +1071,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
                       </div>
                     );
                   })()}
+                  </div>
                 </Card>
 
 
