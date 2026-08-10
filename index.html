@@ -75,74 +75,6 @@ const TEAMS = {
   DK1: ["AB","AaB","Aarhus Fremad","Esbjerg fB","FC Fredericia","HB Køge","Hillerød Fodbold","Hobro IK","Hvidovre IF","Kolding IF","Vejle Boldklub","Vendsyssel FF"],
 };
 
-// Normalize a team name against the official list for a league
-function normalizeTeamName(lid, team) {
-  if (!team || !lid || !TEAMS[lid]) return team;
-  // Exact match - no change needed
-  if (TEAMS[lid].includes(team)) return team;
-  // Find closest match (case-insensitive, ignoring special chars)
-  const clean = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-  const cleanTeam = clean(team);
-  const match = TEAMS[lid].find(t => clean(t) === cleanTeam);
-  return match || team;
-}
-
-// Normalize all picks in a group against official team lists
-function normalizePicks(picks, activeLeagues) {
-  if (!picks) return picks;
-  const normalized = {};
-  for (const pid of Object.keys(picks)) {
-    normalized[pid] = {};
-    for (const lid of Object.keys(picks[pid])) {
-      const team = picks[pid][lid];
-      normalized[pid][lid] = normalizeTeamName(lid, team);
-    }
-  }
-  return normalized;
-}
-
-
-const LEAGUE_IDS = Object.keys(LEAGUES);
-const AMATEUR_LEAGUES = LEAGUE_IDS.filter(id => LEAGUES[id].tier === 1); // locked set
-const TIER_AVAILABLE = {
-  amateur: AMATEUR_LEAGUES,      // fixed 5, cannot change
-  semipro: LEAGUE_IDS,           // pick any 10 from all 17
-  pro:     LEAGUE_IDS,           // pick any 15 from all 17
-};
-
-const STANDINGS_2526 = {
-  PL: ["Arsenal","Manchester City","Manchester United","Aston Villa","Liverpool","Bournemouth","Sunderland","Brighton","Brentford","Chelsea","Fulham","Newcastle United","Everton","Leeds United","Crystal Palace","Nottingham Forest","Tottenham Hotspur","West Ham","Burnley","Wolverhampton Wanderers"],
-  LL: ["Barcelona","Real Madrid","Villarreal","Atlético Madrid","Real Betis","Celta Vigo","Real Sociedad","Getafe","Sevilla","Rayo Vallecano","Osasuna","Athletic Bilbao","Alavés","Espanyol","Valencia","Levante","Elche","Mallorca","Girona","Oviedo"],
-  BL: ["Bayern Munich","Bayer Leverkusen","Borussia Dortmund","RB Leipzig","Stuttgart","Eintracht Frankfurt","Freiburg","Hoffenheim","Augsburg","Union Berlin","Mönchengladbach","Mainz","Köln","Werder Bremen","St. Pauli","Heidenheim","Wolfsburg"],
-  SA: ["Inter Milan","Napoli","Roma","Como","AC Milan","Juventus","Atalanta","Fiorentina","Lazio","Bologna","Torino","Udinese","Genoa","Cagliari","Lecce","Empoli","Sassuolo","Monza","Pisa","Hellas Verona","Cremonese"],
-  L1: ["Paris Saint-Germain","Lens","Lille","Lyon","Marseille","Rennes","Monaco","Brest","Nice","Strasbourg","Toulouse","Angers","Auxerre","Le Havre","Lorient","Montpellier","Metz","Nantes"],
-};
-
-//  Supabase 
-const SUPA_URL = "https://nvcrqiybutnededxsbtq.supabase.co";
-const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52Y3JxaXlidXRuZWRlZHhzYnRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODU5NTksImV4cCI6MjEwMDQ2MTk1OX0.D_BXqaJPvbV8XO65DASAiPn9-fqJzxtU_0VV1AdL0vQ";
-
-const APP_VERSION = "2.1";
-
-async function loadUser() {
-  try {
-    const storedVersion = localStorage.getItem("ligamanager-version");
-    if (storedVersion !== APP_VERSION) {
-      localStorage.clear();
-      localStorage.setItem("ligamanager-version", APP_VERSION);
-      return null;
-    }
-    const raw = localStorage.getItem("ligamanager-user-v1");
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-async function saveUser(u) {
-  try {
-    if (u) localStorage.setItem("ligamanager-user-v1", JSON.stringify(u));
-    else localStorage.removeItem("ligamanager-user-v1");
-  } catch(e) { console.error(e); }
-}
 
 async function loadGroup(code) {
   try {
@@ -621,29 +553,16 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
           {(() => {
             const pid = dispPlayer?.id;
             const playerPicks = picks[pid] || {};
-            // Find all positions this player has in draftOrder, sorted ascending
-            const playerPositions = (draftOrder || [])
-              .map((id, idx) => ({ id, idx }))
-              .filter(x => x.id === pid)
-              .map(x => x.idx)
-              .sort((a, b) => a - b);
-            // Only show positions up to current draftIdx (already played)
-            const playedPositions = playerPositions.filter(pos => pos < draftIdx);
-            // Match each played position to a league pick
-            // The nth played position corresponds to the nth pick (sorted by position)
-            const pickedLids = Object.keys(playerPicks);
-            // Sort picked lids by the position they were made (based on draftOrder position)
-            const orderedPicks = playedPositions.slice(0, pickedLids.length).map((pos, i) => {
-              // We don't know which lid was picked at which position, so use pickOrder if available
-              const pickOrder = (league.pickOrder || {})[pid] || [];
-              const lid = pickOrder[i] || pickedLids[i];
+            const pickOrder = (league.pickOrder || {})[pid] || [];
+            // Use pickOrder if available, otherwise use activeLeagues order
+            const lids = pickOrder.length > 0
+              ? pickOrder.filter(lid => playerPicks[lid])
+              : activeLeagues.filter(lid => playerPicks[lid]);
+            if (lids.length === 0) return <div style={{ color:C.g2, fontSize:13 }}>Ingen hold valgt endnu</div>;
+            return lids.map((lid, i) => {
               const team = playerPicks[lid];
-              return lid && team ? { lid, team, round: i + 1 } : null;
-            }).filter(Boolean);
-            if (orderedPicks.length === 0) return <div style={{ color:C.g2, fontSize:13 }}>Ingen hold valgt endnu</div>;
-            return orderedPicks.map(({ lid, team, round }) => {
               const l = LEAGUES[lid];
-              if (!l) return null;
+              if (!l || !team) return null;
               return (
                 <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                   <span style={{ fontSize:20 }}>{l.flag}</span>
@@ -651,7 +570,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
                     <div style={{ fontSize:10, color:C.g2, letterSpacing:1, textTransform:"uppercase" }}>{l.name}</div>
                     <div style={{ fontWeight:700, fontSize:14, color:C.white, marginTop:2 }}>{team}</div>
                   </div>
-                  <span style={{ fontSize:10, color:C.cyan, fontWeight:700 }}>{round}. runde</span>
+                  <span style={{ fontSize:10, color:C.cyan, fontWeight:700 }}>{i+1}. runde</span>
                 </div>
               );
             });
