@@ -408,7 +408,7 @@ function SetupScreen({ onStart, onBack }) {
             {players.map((n,i)=>(
               <div key={i} style={{ display:"flex", gap:8 }}>
                 <input placeholder={`Spiller ${i+1}`} value={n} onChange={e=>{const a=[...players];a[i]=e.target.value;setPlayers(a);}} style={{...inp,flex:1}}/>
-                {players.length>2&&<button onClick={()=>{const a=[...players];a.splice(i,1);setPlayers(a);}} style={{ background:"#ff4d6d11", border:"1px solid #ff4d6d44", color:"#ff4d6d", borderRadius:6, width:42, cursor:"pointer", fontSize:18, fontWeight:700 }}>×</button>}
+                {players.length>2&&<button onClick={()=>{const a=[...players];a.splice(i,1);setPlayers(a);}} style={{ background:"#ff4d6d11", border:"1px solid #ff4d6d44", color:"#ff4d6d", borderRadius:6, width:42, cursor:"pointer", fontSize:18, fontWeight:700 }}>x</button>}
               </div>
             ))}
           </div>
@@ -458,7 +458,7 @@ function DraftScreen({ league, onUpdate, onFinish, onLeague, user }) {
   const total = activeLeagues.length * players.length;
   const dispPlayer = viewAs ? players.find(p=>p.id===viewAs) : curPicker;
 
-  const [confirmPick, setConfirmPick] = useState(null); // { lid, team } — waiting for confirmation
+  const [confirmPick, setConfirmPick] = useState(null); // { lid, team } - waiting for confirmation
 
   function pick(lid, team) {
     setConfirmPick({ lid, team });
@@ -749,7 +749,7 @@ function LeagueScreen({ league, onUpdate, onDraft, user }) {
                           <div key={lid} style={{ display:"flex", alignItems:"center", gap:4 }}>
                             <span style={{ fontSize:10, flexShrink:0 }}>{l.flag}</span>
                             <span style={{ fontSize:10, color:team ? l.accent : C.g2, fontWeight:team ? 700 : 400, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                              {team || "—"}
+                              {team || "-"}
                             </span>
                           </div>
                         );
@@ -1458,7 +1458,7 @@ function App() {
     });
   }, []);
 
-  // Poll Supabase every 15 seconds — only update league data, never change screen
+  // Poll Supabase every 15 seconds - only update league data, never change screen
   useEffect(() => {
     if (!groupCode) return;
     const interval = setInterval(async () => {
