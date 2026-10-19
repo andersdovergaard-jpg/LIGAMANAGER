@@ -723,34 +723,15 @@ function AdminTab({ league, onUpdate }) {
   };
 
   async function fetchESPNStandings(slug) {
-    // Try two ESPN endpoints
-    const urls = [
-      `https://site.api.espn.com/apis/v2/sports/soccer/${slug}/standings`,
-      `https://site.web.api.espn.com/apis/v2/sports/soccer/${slug}/standings?lang=en&region=gb`,
-    ];
-    for (const url of urls) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
-        // ESPN puts entries at different depths
-        const entries =
-          data?.standings?.entries ||
-          data?.children?.[0]?.standings?.entries ||
-          data?.children?.[0]?.children?.[0]?.standings?.entries ||
-          [];
-        const teams = entries.map(e => e.team?.displayName || e.team?.name).filter(Boolean);
-        if (teams.length > 0) return teams;
-      } catch(e) { continue; }
-    }
-    // Fallback: football-standings API (CORS-friendly)
+    // Kald vores egen Vercel serverless function — ingen CORS problemer
     try {
-      const res = await fetch(`https://api-football-standings.azharimm.site/leagues/${slug}/standings?season=2024&sort=asc`);
-      if (!res.ok) return null;
-      const data = await res.json();
-      const teams = (data?.data?.standings || []).map(s => s.team?.displayName || s.team?.name).filter(Boolean);
-      return teams.length > 0 ? teams : null;
-    } catch(e) { return null; }
+      const res = await fetch(`/api/standings?slug=${slug}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.teams && data.teams.length > 0) return data.teams;
+      }
+    } catch(e) {}
+    return null;
   }
 
   async function updateStandings() {
