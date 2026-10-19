@@ -578,22 +578,53 @@ function AdminTab({ league, onUpdate }) {
   const [updateMsg, setUpdateMsg] = useState("");
   const { players, picks, standings, activeLeagues = LEAGUE_IDS } = league;
 
-  // ESPN league IDs for each league key
-  const ESPN_IDS = {
-    PL: 23, LL: 24, BL: 17, SA: 26, L1: 21,
-    NL: 18, TR: 52, DK: 28, SC: 29, PT: 25,
-    CH: 24, BE: 33, AT: 23, EK: 36, DK1: 28,
+  // ESPN slug-based league IDs
+  const ESPN_SLUGS = {
+    PL:  "eng.1",
+    LL:  "esp.1",
+    BL:  "ger.1",
+    SA:  "ita.1",
+    L1:  "fra.1",
+    NL:  "ned.1",
+    TR:  "tur.1",
+    DK:  "den.1",
+    SC:  "sco.1",
+    PT:  "por.1",
+    CH:  "eng.2",
+    BE:  "bel.1",
+    AT:  "aut.1",
+    EK:  "pol.1",
+    DK1: "den.2",
   };
 
-  async function fetchESPNStandings(espnId) {
+  async function fetchESPNStandings(slug) {
+    // Try two ESPN endpoints
+    const urls = [
+      `https://site.api.espn.com/apis/v2/sports/soccer/${slug}/standings`,
+      `https://site.web.api.espn.com/apis/v2/sports/soccer/${slug}/standings?lang=en&region=gb`,
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        // ESPN puts entries at different depths
+        const entries =
+          data?.standings?.entries ||
+          data?.children?.[0]?.standings?.entries ||
+          data?.children?.[0]?.children?.[0]?.standings?.entries ||
+          [];
+        const teams = entries.map(e => e.team?.displayName || e.team?.name).filter(Boolean);
+        if (teams.length > 0) return teams;
+      } catch(e) { continue; }
+    }
+    // Fallback: football-standings API (CORS-friendly)
     try {
-      const res = await fetch(`https://site.web.api.espn.com/apis/v2/sports/soccer/${espnId}/standings?lang=en&region=gb&season=2025&seasontype=1&xhr=1`, {
-        headers: { "Accept": "application/json" }
-      });
+      const res = await fetch(`https://api-football-standings.azharimm.site/leagues/${slug}/standings?season=2024&sort=asc`);
       if (!res.ok) return null;
       const data = await res.json();
-      const entries = data?.standings?.entries || data?.children?.[0]?.standings?.entries || [];
-      return entries.map(e => e.team?.displayName || e.team?.name).filter(Boolean);
+      const teams = (data?.data?.standings || []).map(s => s.team?.displayName || s.team?.name).filter(Boolean);
+      return teams.length > 0 ? teams : null;
     } catch(e) { return null; }
   }
 
@@ -603,29 +634,35 @@ function AdminTab({ league, onUpdate }) {
     try {
       const al = activeLeagues;
       let updated = 0;
+      let failed = [];
       const newStandings = { ...standings };
 
       for (const lid of al) {
-        const espnId = ESPN_IDS[lid];
-        if (!espnId) continue;
+        const slug = ESPN_SLUGS[lid];
+        if (!slug) continue;
         setUpdateMsg(`Henter ${LEAGUES[lid].name}...`);
-        const teams = await fetchESPNStandings(espnId);
+        const teams = await fetchESPNStandings(slug);
         if (teams && teams.length > 0) {
           newStandings[lid] = teams;
           updated++;
+        } else {
+          failed.push(lid);
         }
-        await new Promise(r => setTimeout(r, 200)); // lille pause
+        await new Promise(r => setTimeout(r, 300));
       }
 
       const updatedLeague = { ...league, standings: newStandings };
       onUpdate(updatedLeague);
       await saveGroup(GROUP_CODE, updatedLeague);
-      setUpdateMsg(`Opdateret! (${updated}/${al.length} ligaer)`);
+      setUpdateMsg(failed.length > 0
+        ? `Opdateret: ${updated}/${al.length}. Fejl: ${failed.join(", ")}`
+        : `Opdateret! (${updated}/${al.length} ligaer) ✓`
+      );
     } catch(e) {
       setUpdateMsg("Fejl - prøv igen");
     }
     setUpdating(false);
-    setTimeout(()=>setUpdateMsg(""), 5000);
+    setTimeout(()=>setUpdateMsg(""), 8000);
   }
 
   return (
