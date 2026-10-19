@@ -578,22 +578,54 @@ function AdminTab({ league, onUpdate }) {
   const [updateMsg, setUpdateMsg] = useState("");
   const { players, picks, standings, activeLeagues = LEAGUE_IDS } = league;
 
+  // ESPN league IDs for each league key
+  const ESPN_IDS = {
+    PL: 23, LL: 24, BL: 17, SA: 26, L1: 21,
+    NL: 18, TR: 52, DK: 28, SC: 29, PT: 25,
+    CH: 24, BE: 33, AT: 23, EK: 36, DK1: 28,
+  };
+
+  async function fetchESPNStandings(espnId) {
+    try {
+      const res = await fetch(`https://site.web.api.espn.com/apis/v2/sports/soccer/${espnId}/standings?lang=en&region=gb&season=2025&seasontype=1&xhr=1`, {
+        headers: { "Accept": "application/json" }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const entries = data?.standings?.entries || data?.children?.[0]?.standings?.entries || [];
+      return entries.map(e => e.team?.displayName || e.team?.name).filter(Boolean);
+    } catch(e) { return null; }
+  }
+
   async function updateStandings() {
     setUpdating(true);
-    setUpdateMsg("Henter...");
+    setUpdateMsg("Henter stillinger...");
     try {
-      const res = await fetch(`https://nvcrqiybutnededxsbtq.supabase.co/functions/v1/smooth-service?code=${league.code}`, {
-        headers: { "Authorization": `Bearer ${SUPA_KEY}` }
-      });
-      const data = await res.json();
-      const g = await loadGroup(league.code);
-      if (g) onUpdate(g);
-      setUpdateMsg(`Opdateret! (${data.updated ? data.updated.length : 0} ligaer)`);
+      const al = activeLeagues;
+      let updated = 0;
+      const newStandings = { ...standings };
+
+      for (const lid of al) {
+        const espnId = ESPN_IDS[lid];
+        if (!espnId) continue;
+        setUpdateMsg(`Henter ${LEAGUES[lid].name}...`);
+        const teams = await fetchESPNStandings(espnId);
+        if (teams && teams.length > 0) {
+          newStandings[lid] = teams;
+          updated++;
+        }
+        await new Promise(r => setTimeout(r, 200)); // lille pause
+      }
+
+      const updatedLeague = { ...league, standings: newStandings };
+      onUpdate(updatedLeague);
+      await saveGroup(GROUP_CODE, updatedLeague);
+      setUpdateMsg(`Opdateret! (${updated}/${al.length} ligaer)`);
     } catch(e) {
       setUpdateMsg("Fejl - prøv igen");
     }
     setUpdating(false);
-    setTimeout(()=>setUpdateMsg(""),4000);
+    setTimeout(()=>setUpdateMsg(""), 5000);
   }
 
   return (
