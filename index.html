@@ -7,14 +7,19 @@
   <title>LigaManager</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#001a2e; font-family:'Inter','Helvetica Neue',sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap');
+    body {
+      background: linear-gradient(180deg, #00cfff 0%, #0077cc 30%, #003a80 65%, #001533 100%);
+      background-attachment: fixed;
+      font-family:'Rajdhani','Inter','Helvetica Neue',sans-serif;
+    }
     #root::before {
       content:"";
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background:
-        radial-gradient(ellipse at 15% 20%, rgba(0,210,255,0.12) 0%, transparent 50%),
-        radial-gradient(ellipse at 85% 60%, rgba(58,71,213,0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 90%, rgba(0,100,180,0.1) 0%, transparent 50%);
+        radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse at 20% 50%, rgba(0,210,255,0.08) 0%, transparent 40%),
+        radial-gradient(ellipse at 80% 80%, rgba(0,50,150,0.15) 0%, transparent 40%);
     }
     #root { position:relative; z-index:1; }
     @keyframes spin { to { transform:rotate(360deg) } }
@@ -96,17 +101,17 @@ const TEAMS = {
 
 // FPL-inspired color palette
 const C = {
-  // Deep navy/purple background
-  bg:      "#001a2e",
-  bg2:     "#002a45",
-  // Hero gradient — teal to purple like FPL
-  heroTop: "#00d2ff",
-  heroBot: "#005f8a",
-  // Card surfaces
-  card:    "rgba(255,255,255,0.07)",
-  cardH:   "rgba(255,255,255,0.12)",
-  border:  "rgba(255,255,255,0.1)",
-  border2: "rgba(255,255,255,0.2)",
+  // Background
+  bg:      "#003a80",
+  bg2:     "#0055aa",
+  // Hero gradient
+  heroTop: "#00cfff",
+  heroBot: "#0055aa",
+  // Card surfaces — slightly lighter so they pop on the gradient bg
+  card:    "rgba(0,30,80,0.45)",
+  cardH:   "rgba(0,40,100,0.6)",
+  border:  "rgba(255,255,255,0.15)",
+  border2: "rgba(255,255,255,0.25)",
   // Accent colors
   teal:    "#00d2ff",
   purple:  "#7b2ff7",
@@ -118,8 +123,8 @@ const C = {
   muted:   "rgba(232,234,240,0.5)",
   dim:     "rgba(232,234,240,0.25)",
   // Gradients
-  heroGrad: "linear-gradient(180deg, #00d2ff 0%, #0077aa 45%, #001a2e 100%)",
-  tabGrad:  "linear-gradient(180deg, #002a45 0%, #001a2e 100%)",
+  heroGrad: "linear-gradient(180deg, #00cfff 0%, #0077cc 60%, #003a80 100%)",
+  tabGrad:  "linear-gradient(180deg, #0055aa 0%, #003a80 100%)",
 };
 
 const PLAYER_COLORS = ["#00d2ff","#00ff87","#ebff00","#ff2d78","#c77dff","#ff9d00","#00f5d4","#f72585","#4cc9f0","#b5e48c","#ffd6ff","#48cae4"];
