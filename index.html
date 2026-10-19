@@ -402,13 +402,28 @@ function StandingsTab({ league }) {
           </div>
           {/* Name + leagues */}
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontWeight:800, fontSize:17, color:"#fff", letterSpacing:-0.3, marginBottom:5 }}>{p.name}</div>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"4px 10px" }}>
-              {activeLeagues.map(lid=>(
-                <span key={lid} style={{ fontSize:11, color:p.byLeague[lid].team ? C.muted : C.dim }}>
-                  {LEAGUES[lid].flag} {p.byLeague[lid].team||"-"}{p.byLeague[lid].points?` (${p.byLeague[lid].points})`:``}
-                </span>
-              ))}
+            <div style={{ fontWeight:800, fontSize:17, color:"#fff", letterSpacing:-0.3, marginBottom:8 }}>{p.name}</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3px 8px" }}>
+              {[...activeLeagues]
+                .sort((a,b)=>{
+                  const pa = p.byLeague[a].points ?? 999;
+                  const pb = p.byLeague[b].points ?? 999;
+                  return pa - pb;
+                })
+                .map(lid=>{
+                  const {team, points} = p.byLeague[lid];
+                  const hasPoints = points !== null;
+                  return (
+                    <div key={lid} style={{ display:"flex", alignItems:"baseline", gap:4, minWidth:0 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:C.dim, flexShrink:0 }}>{LEAGUES[lid].flag}</span>
+                      <span style={{ fontSize:11, color: hasPoints ? "#e8f4ff" : C.dim, fontWeight: hasPoints ? 600 : 400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {team||"-"}
+                      </span>
+                      {hasPoints && <span style={{ fontSize:11, fontWeight:800, color: points<=5 ? C.green : points<=10 ? C.teal : C.muted, flexShrink:0 }}>({points})</span>}
+                    </div>
+                  );
+                })
+              }
             </div>
           </div>
           {/* Score */}
