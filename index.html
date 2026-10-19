@@ -36,8 +36,9 @@
     html, body {
       min-height: 100%;
       margin: 0; padding: 0;
+      width: 100%;
       max-width: 100vw;
-      overflow-x: clip;
+      overflow-x: hidden;
     }
     html {
       background: #1e3a70;
@@ -86,7 +87,7 @@
     #bg .b11 { display:none; }
     #bg .b12 { display:none; }
 
-    #root { position: relative; z-index: 1; width: 100%; overflow-x: hidden; }
+    #root { position: relative; z-index: 1; width: 100%; max-width: 100vw; overflow-x: hidden; }
 
     /* Glassmorphism — alle kort og felter */
     .glass {
@@ -995,7 +996,6 @@ function LeagueHero({ league }) {
           </div>
           {leader && (
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:1 }}>Forer</div>
               <div style={{ fontSize:14, fontWeight:900, color:"#fff" }}>🥇 {leader.name.split(" ")[0]}</div>
               <div style={{ fontSize:20, fontWeight:900, color:C.yellow, lineHeight:1 }}>{leader.total} pt.</div>
             </div>
@@ -1062,10 +1062,8 @@ function App() {
 
   const TABS = [
     { id:"rangliste", label:"Rangliste" },
-    { id:"spillere",  label:"Spillere" },
     { id:"ligaer",    label:"Ligaer" },
     { id:"tabeller",  label:"Tabeller" },
-    { id:"udvikling", label:"Udvikling" },
     { id:"admin",     label:"Admin" },
   ];
 
@@ -1126,10 +1124,8 @@ function App() {
 
       {/* Content */}
       {tab==="rangliste"  && <StandingsTab league={league}/>}
-      {tab==="spillere"   && <SpillereTab league={league}/>}
       {tab==="ligaer"     && <LigaerTab league={league}/>}
       {tab==="tabeller"   && <TabellerTab league={league} isAdmin={adminUnlocked} onUpdate={handleUpdate}/>}
-      {tab==="udvikling"  && <UdviklingTab league={league}/>}
       {tab==="admin" && (
         adminUnlocked
           ? <AdminTab league={league} onUpdate={handleUpdate}/>
