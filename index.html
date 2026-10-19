@@ -197,20 +197,20 @@ const C = {
   heroTop: "#00cfff",
   heroBot: "#0055aa",
   // Card surfaces — slightly lighter so they pop on the gradient bg
-  card:    "rgba(255,255,255,0.55)",
-  cardH:   "rgba(255,255,255,0.75)",
-  border:  "rgba(255,255,255,0.5)",
-  border2: "rgba(255,255,255,0.7)",
+  card:    "rgba(255,255,255,0.10)",
+  cardH:   "rgba(255,255,255,0.18)",
+  border:  "rgba(255,255,255,0.18)",
+  border2: "rgba(255,255,255,0.28)",
   // Accent colors
   teal:    "#00d2ff",
-  purple:  "#7b2ff7",
+  purple:  "#c084fc",
   green:   "#00ff87",
   yellow:  "#ebff00",
   pink:    "#ff2d78",
-  white:   "#1e3a5f",
+  white:   "#e8f4ff",
   offwhite:"#e8f4ff",
-  muted:   "rgba(30,58,95,0.55)",
-  dim:     "rgba(30,58,95,0.35)",
+  muted:   "rgba(232,244,255,0.55)",
+  dim:     "rgba(232,244,255,0.35)",
   // Gradients
   heroGrad: "linear-gradient(180deg, #00cfff 0%, #0077cc 60%, #003a80 100%)",
   tabGrad:  "linear-gradient(180deg, #0055aa 0%, #003a80 100%)",
@@ -252,7 +252,7 @@ function Spinner() {
 
 function HeroHeader({ title, sub, children }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.4)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"48px 20px 40px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+    <div style={{ background: "rgba(20,40,100,0.40)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"48px 20px 40px", textAlign:"center", position:"relative", overflow:"hidden" }}>
       {/* Diagonal stripe overlay */}
       <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
       {/* Radial glow */}
@@ -272,7 +272,7 @@ function HeroHeader({ title, sub, children }) {
 
 function TabBar({ tabs, active, onChange }) {
   return (
-    <div style={{ background:"rgba(255,255,255,0.45)", backdropFilter:"blur(20px) saturate(1.8)", WebkitBackdropFilter:"blur(20px) saturate(1.8)", borderBottom:"1px solid rgba(255,255,255,0.7)", display:"flex", overflowX:"auto", position:"sticky", top:0, zIndex:20 }}>
+    <div style={{ background:"rgba(20,40,100,0.55)", backdropFilter:"blur(20px) saturate(1.8)", WebkitBackdropFilter:"blur(20px) saturate(1.8)", borderBottom:"1px solid rgba(255,255,255,0.15)", display:"flex", overflowX:"auto", position:"sticky", top:0, zIndex:20 }}>
       {tabs.map(t => (
         <button key={t.id} onClick={()=>onChange(t.id)} style={{
           flexShrink:0, padding:"14px 16px", background:"none", border:"none",
@@ -293,14 +293,14 @@ function TabBar({ tabs, active, onChange }) {
 function Card({ children, glow, accent, style:sx={} }) {
   return (
     <div style={{
-      background: glow ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.55)",
-      backdropFilter: "blur(20px) saturate(1.4)",
-      WebkitBackdropFilter: "blur(20px) saturate(1.4)",
-      border: `1px solid ${glow ? (accent||C.teal)+"88" : "rgba(255,255,255,0.6)"}`,
+      background: glow ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)",
+      backdropFilter: "blur(20px) saturate(1.6)",
+      WebkitBackdropFilter: "blur(20px) saturate(1.6)",
+      border: `1px solid ${glow ? (accent||C.teal)+"66" : "rgba(255,255,255,0.18)"}`,
       borderRadius:16, padding:16,
       boxShadow: glow
-        ? `0 8px 32px rgba(100,120,255,0.25), inset 0 1px 0 rgba(255,255,255,0.9)`
-        : "0 8px 32px rgba(80,100,220,0.18), inset 0 1px 0 rgba(255,255,255,0.8)",
+        ? `0 8px 32px rgba(0,180,255,0.20), inset 0 1px 0 rgba(255,255,255,0.25)`
+        : "0 4px 24px rgba(0,0,80,0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
       ...sx
     }}>
       {children}
@@ -910,7 +910,7 @@ function LeagueHero({ league }) {
   const totalPossible = players.length * activeLeagues.length;
 
   return (
-    <div style={{ background: "rgba(255,255,255,0.4)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"40px 20px 32px", position:"relative", overflow:"hidden" }}>
+    <div style={{ background: "rgba(20,40,100,0.45)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"40px 20px 32px", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
       <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%,rgba(0,210,255,0.25) 0%,transparent 70%)", pointerEvents:"none" }}/>
       <div style={{ position:"relative", maxWidth:520, margin:"0 auto" }}>
@@ -1005,14 +1005,14 @@ function App() {
   ];
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
+    <div style={{ minHeight:"100vh", background:"rgba(20,40,100,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
       <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, color:"#fff" }}>LIGA<span style={{ color:C.teal }}>MANAGER</span></div>
       <Spinner/>
     </div>
   );
 
   if (!league) return (
-    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+    <div style={{ minHeight:"100vh", background:"rgba(20,40,100,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ textAlign:"center", maxWidth:340 }}>
         <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
         <h2 style={{ color:"#fff", fontWeight:900, fontSize:20, marginBottom:8 }}>Kunne ikke hente gruppe</h2>
@@ -1044,7 +1044,7 @@ function App() {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", color:"#1e3a5f", fontFamily:"'Rajdhani','Arial Narrow',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"transparent", color:"#e8f4ff", fontFamily:"'Rajdhani','Arial Narrow',sans-serif" }}>
 
       {/* Hero */}
       <LeagueHero league={league}/>
