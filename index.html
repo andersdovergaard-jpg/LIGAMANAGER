@@ -8,6 +8,15 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { background:#001a2e; font-family:'Inter','Helvetica Neue',sans-serif; }
+    #root::before {
+      content:"";
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 15% 20%, rgba(0,210,255,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 60%, rgba(58,71,213,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 90%, rgba(0,100,180,0.1) 0%, transparent 50%);
+    }
+    #root { position:relative; z-index:1; }
     @keyframes spin { to { transform:rotate(360deg) } }
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
     @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }
