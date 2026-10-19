@@ -28,16 +28,12 @@ const ADMIN_CODE = "1919";
 
 async function loadGroup(code) {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/get_group`, {
-      method: "POST",
-      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_code: code }),
+    const res = await fetch(`${SUPA_URL}/rest/v1/groups?code=eq.${code}&select=data`, {
+      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}` },
     });
-    if (res.ok) {
-      const d = await res.json();
-      return d || null;
-    }
-    return null;
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows && rows.length > 0 ? rows[0].data : null;
   } catch(e) { console.error(e); return null; }
 }
 
