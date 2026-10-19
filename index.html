@@ -275,11 +275,11 @@ function TabBar({ tabs, active, onChange }) {
     <div style={{ background:"rgba(20,40,100,0.55)", backdropFilter:"blur(20px) saturate(1.8)", WebkitBackdropFilter:"blur(20px) saturate(1.8)", borderBottom:"1px solid rgba(255,255,255,0.15)", display:"flex", overflowX:"auto", position:"sticky", top:0, zIndex:20 }}>
       {tabs.map(t => (
         <button key={t.id} onClick={()=>onChange(t.id)} style={{
-          flexShrink:0, padding:"14px 16px", background:"none", border:"none",
-          borderBottom: active===t.id ? `3px solid ${C.teal}` : "3px solid transparent",
+          flexShrink:0, padding:"11px 13px", background:"none", border:"none",
+          borderBottom: active===t.id ? `2px solid ${C.teal}` : "2px solid transparent",
           color: active===t.id ? C.teal : C.dim,
           fontWeight: active===t.id ? 800 : 600,
-          fontSize:12, letterSpacing:1.5, textTransform:"uppercase",
+          fontSize:11, letterSpacing:1.2, textTransform:"uppercase",
           cursor:"pointer", whiteSpace:"nowrap", transition:"color .15s",
           fontFamily:"inherit",
         }}>
@@ -380,61 +380,96 @@ function StandingsTab({ league }) {
   const medals = ["🥇","🥈","🥉"];
   const medalColors = [C.yellow, "#C0C0C0", "#CD7F32"];
 
+  const [expanded, setExpanded] = useState(null);
+
   return (
-    <div style={{ padding:"16px 16px 60px" }}>
-      {scores.map((p,i)=>(
-        <div key={p.id} style={{
-          display:"flex", alignItems:"center", gap:14,
-          padding:"16px 16px",
-          background: i===0 ? `linear-gradient(135deg,rgba(235,255,0,0.1),rgba(255,255,255,0.05))` : C.card,
-          border: `1px solid ${i===0?C.yellow+"44":C.border}`,
-          borderRadius:14, marginBottom:10,
-          animation:"fadeIn .3s ease both",
-          animationDelay:`${i*0.05}s`,
-          ...(i===0 ? {boxShadow:`0 4px 24px rgba(235,255,0,0.15)`} : {})
-        }}>
-          {/* Position */}
-          <div style={{ textAlign:"center", flexShrink:0, width:36 }}>
-            {i < 3
-              ? <div style={{ fontSize:24 }}>{medals[i]}</div>
-              : <div style={{ width:36, height:36, borderRadius:"50%", background:C.card, border:`1px solid ${C.border2}`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:15, color:C.muted }}>{i+1}</div>
-            }
-          </div>
-          {/* Name + leagues */}
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontWeight:800, fontSize:17, color:"#fff", letterSpacing:-0.3, marginBottom:8 }}>{p.name}</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3px 8px" }}>
-              {[...activeLeagues]
-                .sort((a,b)=>{
-                  const pa = p.byLeague[a].points ?? 999;
-                  const pb = p.byLeague[b].points ?? 999;
-                  return pa - pb;
-                })
-                .map(lid=>{
+    <div style={{ padding:"12px 12px 60px" }}>
+      {scores.map((p,i)=>{
+        const isOpen = expanded === p.id;
+        const sortedLeagues = [...activeLeagues].sort((a,b)=>{
+          const pa = p.byLeague[a].points ?? 999;
+          const pb = p.byLeague[b].points ?? 999;
+          return pa - pb;
+        });
+        return (
+          <div key={p.id} style={{
+            background: i===0 ? `linear-gradient(135deg,rgba(235,255,0,0.08),rgba(255,255,255,0.06))` : C.card,
+            border: `1px solid ${i===0?C.yellow+"44":C.border}`,
+            borderRadius:14, marginBottom:8,
+            animation:"fadeIn .3s ease both", animationDelay:`${i*0.05}s`,
+            overflow:"hidden",
+            ...(i===0 ? {boxShadow:`0 4px 24px rgba(235,255,0,0.12)`} : {})
+          }}>
+            {/* Header row — alltid synlig */}
+            <div onClick={()=>setExpanded(isOpen?null:p.id)}
+              style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", cursor:"pointer" }}>
+              {/* Position */}
+              <div style={{ flexShrink:0, width:32, textAlign:"center" }}>
+                {i < 3
+                  ? <div style={{ fontSize:22 }}>{medals[i]}</div>
+                  : <div style={{ width:30, height:30, borderRadius:"50%", background:"rgba(255,255,255,0.08)", border:`1px solid ${C.border2}`, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:13, color:C.muted }}>{i+1}</div>
+                }
+              </div>
+              {/* Name */}
+              <div style={{ flex:1, fontWeight:800, fontSize:16, color:"#fff", letterSpacing:-0.3 }}>{p.name}</div>
+              {/* Score */}
+              <div style={{ textAlign:"right", flexShrink:0 }}>
+                <div style={{ fontSize:28, fontWeight:900, color:i===0?C.yellow:"#fff", letterSpacing:-1, lineHeight:1 }}>{p.total}</div>
+                <div style={{ fontSize:9, color:C.dim, letterSpacing:1, textTransform:"uppercase" }}>point</div>
+              </div>
+              {/* Expand chevron */}
+              <div style={{ fontSize:12, color:C.dim, flexShrink:0, marginLeft:2, transform: isOpen?"rotate(180deg)":"none", transition:"transform .2s" }}>▼</div>
+            </div>
+
+            {/* Chips — altid synlige, kompakt */}
+            <div style={{ padding:"0 14px 10px", display:"flex", flexWrap:"wrap", gap:"4px 5px" }}>
+              {sortedLeagues.map(lid=>{
+                const {team, points} = p.byLeague[lid];
+                const hasPoints = points !== null;
+                const chipColor = !hasPoints ? "rgba(255,255,255,0.06)"
+                  : points<=3 ? "rgba(0,255,135,0.15)"
+                  : points<=8 ? "rgba(0,210,255,0.12)"
+                  : "rgba(255,255,255,0.07)";
+                const textColor = !hasPoints ? C.dim
+                  : points<=3 ? C.green
+                  : points<=8 ? C.teal
+                  : C.muted;
+                return (
+                  <div key={lid} style={{
+                    background: chipColor,
+                    border:`1px solid ${hasPoints ? textColor+"44" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius:20, padding:"3px 8px",
+                    display:"flex", alignItems:"center", gap:3
+                  }}>
+                    <span style={{ fontSize:9, color:C.dim, fontWeight:700 }}>{LEAGUES[lid].flag}</span>
+                    {hasPoints && <span style={{ fontSize:11, fontWeight:800, color:textColor }}>{points}</span>}
+                    {!hasPoints && <span style={{ fontSize:10, color:C.dim }}>–</span>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Udvidet detalje — holdnavne */}
+            {isOpen && (
+              <div style={{ borderTop:`1px solid ${C.border}`, padding:"10px 14px 12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"5px 10px" }}>
+                {sortedLeagues.map(lid=>{
                   const {team, points} = p.byLeague[lid];
                   const hasPoints = points !== null;
                   return (
-                    <div key={lid} style={{ display:"flex", alignItems:"baseline", gap:4, minWidth:0 }}>
-                      <span style={{ fontSize:10, fontWeight:700, color:C.dim, flexShrink:0 }}>{LEAGUES[lid].flag}</span>
-                      <span style={{ fontSize:11, color: hasPoints ? "#e8f4ff" : C.dim, fontWeight: hasPoints ? 600 : 400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                        {team||"-"}
-                      </span>
-                      {hasPoints && <span style={{ fontSize:11, fontWeight:800, color: points<=5 ? C.green : points<=10 ? C.teal : C.muted, flexShrink:0 }}>({points})</span>}
+                    <div key={lid} style={{ display:"flex", alignItems:"center", gap:5, minWidth:0 }}>
+                      <span style={{ fontSize:9, fontWeight:700, color:C.dim, flexShrink:0 }}>{LEAGUES[lid].flag}</span>
+                      <span style={{ fontSize:11, color: hasPoints?"#e8f4ff":C.dim, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{team||"–"}</span>
+                      {hasPoints && <span style={{ fontSize:11, fontWeight:800, color: points<=3?C.green:points<=8?C.teal:C.muted, flexShrink:0 }}>({points})</span>}
                     </div>
                   );
-                })
-              }
-            </div>
+                })}
+              </div>
+            )}
           </div>
-          {/* Score */}
-          <div style={{ textAlign:"right", flexShrink:0 }}>
-            <div style={{ fontSize:30, fontWeight:900, color:i===0?C.yellow:"#fff", letterSpacing:-1 }}>{p.total}</div>
-            <div style={{ fontSize:10, color:C.dim, letterSpacing:1, textTransform:"uppercase" }}>point</div>
-          </div>
-        </div>
-      ))}
-      <p style={{ textAlign:"center", color:C.dim, fontSize:11, letterSpacing:1.5, textTransform:"uppercase", marginTop:16 }}>
-        Lavest point vinder - Point = slutplacering
+        );
+      })}
+      <p style={{ textAlign:"center", color:C.dim, fontSize:11, letterSpacing:1.5, textTransform:"uppercase", marginTop:12 }}>
+        Lavest point vinder — point = slutplacering
       </p>
     </div>
   );
@@ -492,16 +527,15 @@ function SpillereTab({ league }) {
         if (!p) return null;
         return (
           <Card glow accent={color} style={{ marginTop:4 }}>
-            <div style={{ fontWeight:900, fontSize:16, color:"#fff", marginBottom:12 }}>{p.name}</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            <div style={{ fontWeight:900, fontSize:14, color:"#fff", marginBottom:10 }}>{p.name}s hold</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"5px 8px" }}>
               {activeLeagues.map(lid => {
                 const team = picks[p.id]?.[lid];
                 const l = LEAGUES[lid];
                 return (
-                  <div key={lid} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 10px", background:"rgba(0,0,0,0.2)", borderRadius:8 }}>
-                    <span style={{ fontSize:16, flexShrink:0 }}>{l.flag}</span>
-                    <span style={{ fontSize:12, color:C.dim, flex:1, flexShrink:0, width:80 }}>{l.name}</span>
-                    <span style={{ fontSize:13, fontWeight:700, color:team?l.accent:C.dim }}>{team||"—"}</span>
+                  <div key={lid} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 8px", background:"rgba(0,0,0,0.2)", borderRadius:7, minWidth:0 }}>
+                    <span style={{ fontSize:12, flexShrink:0 }}>{l.flag}</span>
+                    <span style={{ fontSize:11, fontWeight:700, color:team?l.accent:C.dim, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{team||"—"}</span>
                   </div>
                 );
               })}
@@ -516,40 +550,57 @@ function SpillereTab({ league }) {
 // ---- LIGAER TAB ----
 function LigaerTab({ league }) {
   const { players, picks, activeLeagues = LEAGUE_IDS } = league;
+  const [open, setOpen] = useState({});
 
   return (
-    <div style={{ padding:"16px 16px 60px" }}>
+    <div style={{ padding:"12px 12px 60px" }}>
       {activeLeagues.map((lid, i) => {
         const l = LEAGUES[lid];
         const allTeams = TEAMS[lid] || [];
         const takenTeams = players.filter(p=>picks[p.id]?.[lid]).map(p=>({ team:picks[p.id][lid], owner:p.name.split(" ")[0] }));
         const takenNames = takenTeams.map(t=>t.team);
         const freeTeams = allTeams.filter(t=>!takenNames.includes(t)).sort();
+        const isOpen = !!open[lid];
 
         return (
-          <div key={lid} style={{ marginBottom:14, animation:"fadeIn .3s ease both", animationDelay:`${i*0.03}s` }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-              <span style={{ fontSize:20 }}>{l.flag}</span>
-              <span style={{ fontWeight:900, fontSize:14, color:"#fff" }}>{l.name}</span>
-              <PillBadge color={l.accent}>{takenTeams.length}/{allTeams.length}</PillBadge>
-            </div>
-            <Card>
-              {takenTeams.map(({team, owner}) => (
-                <div key={team} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid rgba(255,255,255,0.05)` }}>
-                  <span style={{ fontSize:13, fontWeight:700, color:l.accent }}>{team}</span>
-                  <span style={{ fontSize:12, color:C.teal, fontWeight:700 }}>{owner}</span>
-                </div>
-              ))}
-              {freeTeams.length > 0 && (
-                <div style={{ marginTop:takenTeams.length>0?8:0 }}>
-                  {freeTeams.map(team => (
-                    <div key={team} style={{ padding:"5px 0" }}>
-                      <span style={{ fontSize:12, color:C.dim }}>{team}</span>
+          <div key={lid} style={{ marginBottom:6, animation:"fadeIn .3s ease both", animationDelay:`${i*0.03}s` }}>
+            <button onClick={()=>setOpen(p=>({...p,[lid]:!p[lid]}))} style={{
+              width:"100%", display:"flex", alignItems:"center", gap:10,
+              padding:"11px 14px", borderRadius: isOpen ? "10px 10px 0 0" : 10,
+              background: isOpen ? "rgba(255,255,255,0.12)" : C.card,
+              border:`1px solid ${isOpen ? C.border2 : C.border}`,
+              borderBottom: isOpen ? "none" : undefined,
+              cursor:"pointer", fontFamily:"inherit",
+            }}>
+              <span style={{ fontSize:16 }}>{l.flag}</span>
+              <span style={{ fontWeight:800, fontSize:13, color:"#fff", flex:1, textAlign:"left" }}>{l.name}</span>
+              <span style={{ fontSize:10, color:C.teal, fontWeight:700, marginRight:4 }}>{takenTeams.length} valgt</span>
+              <span style={{ fontSize:11, color:C.dim, transform:isOpen?"rotate(180deg)":"none", transition:"transform .2s" }}>▼</span>
+            </button>
+            {isOpen && (
+              <div style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${C.border2}`, borderTop:"none", borderRadius:"0 0 10px 10px", padding:"8px 14px 10px" }}>
+                {takenTeams.length > 0 && (
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"4px 8px", marginBottom: freeTeams.length>0 ? 8 : 0 }}>
+                    {takenTeams.map(({team,owner})=>(
+                      <div key={team} style={{ display:"flex", alignItems:"center", gap:5, minWidth:0 }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:l.accent, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{team}</span>
+                        <span style={{ fontSize:10, color:C.teal, fontWeight:700, flexShrink:0 }}>{owner}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {freeTeams.length > 0 && (
+                  <>
+                    <div style={{ fontSize:9, color:C.dim, letterSpacing:1, textTransform:"uppercase", marginBottom:5 }}>Ledige</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3px 8px" }}>
+                      {freeTeams.map(team=>(
+                        <span key={team} style={{ fontSize:11, color:C.dim, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{team}</span>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
@@ -925,52 +976,45 @@ function LeagueHero({ league }) {
   const totalPossible = players.length * activeLeagues.length;
 
   return (
-    <div style={{ background: "rgba(20,40,100,0.45)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"40px 20px 32px", position:"relative", overflow:"hidden" }}>
-      <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
-      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%,rgba(0,210,255,0.25) 0%,transparent 70%)", pointerEvents:"none" }}/>
-      <div style={{ position:"relative", maxWidth:520, margin:"0 auto" }}>
-        {/* Title */}
-        <div style={{ textAlign:"center", marginBottom:24 }}>
-          <h1 style={{ fontSize:38, fontWeight:900, letterSpacing:-2, color:"#fff", margin:"0 0 4px" }}>
-            LIGA<span style={{ color:C.yellow }}>MANAGER</span>
-          </h1>
-          <p style={{ fontSize:11, color:"rgba(255,255,255,0.6)", letterSpacing:2, textTransform:"uppercase" }}>{league.name}</p>
+    <div style={{ background: "rgba(20,40,100,0.45)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"20px 16px 16px", position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%,rgba(0,210,255,0.2) 0%,transparent 70%)", pointerEvents:"none" }}/>
+      <div style={{ position:"relative" }}>
+        {/* Title + leader on same row */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
+          <div>
+            <h1 style={{ fontSize:26, fontWeight:900, letterSpacing:-1, color:"#fff", margin:0, lineHeight:1 }}>
+              LIGA<span style={{ color:C.yellow }}>MANAGER</span>
+            </h1>
+            <p style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1.5, textTransform:"uppercase", margin:"3px 0 0" }}>{league.name}</p>
+          </div>
+          {leader && (
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:1 }}>Forer</div>
+              <div style={{ fontSize:14, fontWeight:900, color:"#fff" }}>🥇 {leader.name.split(" ")[0]}</div>
+              <div style={{ fontSize:20, fontWeight:900, color:C.yellow, lineHeight:1 }}>{leader.total} pt.</div>
+            </div>
+          )}
         </div>
         {/* Stats row */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-          <div style={{ background:"rgba(0,0,0,0.25)", borderRadius:12, padding:"14px 12px", textAlign:"center" }}>
-            <div style={{ fontSize:26, fontWeight:900, color:C.yellow }}>{leader?.total ?? "—"}</div>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1, textTransform:"uppercase" }}>Ledende pt.</div>
-          </div>
-          <div style={{ background:"rgba(0,0,0,0.25)", borderRadius:12, padding:"14px 12px", textAlign:"center" }}>
-            <div style={{ fontSize:26, fontWeight:900, color:"#fff" }}>{players.length}</div>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1, textTransform:"uppercase" }}>Spillere</div>
-          </div>
-          <div style={{ background:"rgba(0,0,0,0.25)", borderRadius:12, padding:"14px 12px", textAlign:"center" }}>
-            <div style={{ fontSize:26, fontWeight:900, color:C.teal }}>{activeLeagues.length}</div>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1, textTransform:"uppercase" }}>Ligaer</div>
-          </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+          {[
+            { val: leader?.total ?? "—", label:"Ledende", color:C.yellow },
+            { val: players.length, label:"Spillere", color:"#fff" },
+            { val: activeLeagues.length, label:"Ligaer", color:C.teal },
+          ].map(({val,label,color})=>(
+            <div key={label} style={{ background:"rgba(0,0,0,0.2)", borderRadius:10, padding:"10px 8px", textAlign:"center" }}>
+              <div style={{ fontSize:22, fontWeight:900, color, lineHeight:1 }}>{val}</div>
+              <div style={{ fontSize:9, color:"rgba(255,255,255,0.45)", letterSpacing:1, textTransform:"uppercase", marginTop:2 }}>{label}</div>
+            </div>
+          ))}
         </div>
-        {/* Leader */}
-        {leader && (
-          <div style={{ marginTop:16, background:"rgba(0,0,0,0.2)", borderRadius:12, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1, textTransform:"uppercase", marginBottom:3 }}>Forer</div>
-              <div style={{ fontSize:18, fontWeight:900, color:"#fff" }}>🥇 {leader.name}</div>
-            </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:24, fontWeight:900, color:C.yellow }}>{leader.total} pt.</div>
-            </div>
-          </div>
-        )}
-        {/* Draft progress */}
         {league.phase === "draft" && (
-          <div style={{ marginTop:12 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-              <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>Draft fremgang</span>
-              <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>{totalPicks}/{totalPossible}</span>
+          <div style={{ marginTop:10 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>Draft fremgang</span>
+              <span style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>{totalPicks}/{totalPossible}</span>
             </div>
-            <div style={{ height:4, background:"rgba(255,255,255,0.15)", borderRadius:2 }}>
+            <div style={{ height:3, background:"rgba(255,255,255,0.12)", borderRadius:2 }}>
               <div style={{ height:"100%", width:`${(totalPicks/totalPossible)*100}%`, background:"linear-gradient(90deg,#00d2ff,#00ff87)", borderRadius:2, transition:"width .4s" }}/>
             </div>
           </div>
