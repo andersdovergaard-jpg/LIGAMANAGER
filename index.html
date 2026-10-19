@@ -38,7 +38,7 @@
       margin: 0; padding: 0;
     }
     html {
-      background: #001533;
+      background: #b8eeff;
     }
     body {
       background: transparent;
@@ -49,52 +49,37 @@
       position: relative;
       overflow-x: hidden;
     }
-    /* Blob canvas — fixed behind everything */
+    /* Blob canvas — scrolls WITH the page so new blobs appear as you scroll */
     #bg {
-      position: fixed;
-      inset: 0;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      min-height: 400vh;
       z-index: 0;
-      overflow: hidden;
-      filter: blur(70px) saturate(1.4);
+      pointer-events: none;
+      filter: blur(80px) saturate(1.2);
     }
     #bg .b {
       position: absolute;
       border-radius: 50%;
-      mix-blend-mode: screen;
-      opacity: 0.75;
+      opacity: 0.55;
     }
-    /* teal */
-    #bg .b1 { width:70vw; height:70vw; top:-10%; left:-15%; background:radial-gradient(circle, #00d2ff, #0077cc); animation: blob1 20s ease-in-out infinite; }
-    /* deep blue */
-    #bg .b2 { width:60vw; height:60vw; top:25%; right:-20%; background:radial-gradient(circle, #003a80, #001533); animation: blob2 25s ease-in-out infinite; opacity:0.9; }
-    /* violet/purple */
-    #bg .b3 { width:50vw; height:50vw; top:55%; left:10%; background:radial-gradient(circle, #7b2ff7, #3a0080); animation: blob3 22s ease-in-out infinite; opacity:0.6; }
-    /* warm cyan-green */
-    #bg .b4 { width:45vw; height:45vw; top:70%; right:5%; background:radial-gradient(circle, #00ffcc, #00aaaa); animation: blob4 18s ease-in-out infinite; opacity:0.45; }
-    /* soft magenta accent */
-    #bg .b5 { width:35vw; height:35vw; top:15%; left:55%; background:radial-gradient(circle, #cc44ff, #7700cc); animation: blob1 28s ease-in-out infinite reverse; opacity:0.35; }
-    /* Glossy shimmer sweep */
-    #bg .shimmer {
-      position: absolute;
-      top: -50%; left: 0;
-      width: 40%; height: 200%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
-      animation: shimmer 10s ease-in-out infinite;
-      border-radius: 0;
-      mix-blend-mode: overlay;
-      filter: none;
-      opacity: 1;
-    }
-    /* Glass gloss on top */
-    #bg .gloss {
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 90% 35% at 15% 5%, rgba(255,255,255,0.15) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 20% at 85% 80%, rgba(255,255,255,0.07) 0%, transparent 50%);
-      mix-blend-mode: overlay;
-      filter: none;
-    }
+    /* --- TOP ZONE (0–100vh) --- */
+    #bg .b1  { width:80vw;  height:80vw;  top:0%;    left:-20%;  background:#7dd9f5; animation: blob1 22s ease-in-out infinite; }
+    #bg .b2  { width:55vw;  height:55vw;  top:5%;    right:-10%; background:#a8edff; animation: blob2 18s ease-in-out infinite; }
+    #bg .b3  { width:40vw;  height:40vw;  top:20%;   left:40%;   background:#c084fc; opacity:0.35; animation: blob3 25s ease-in-out infinite; }
+    /* --- MID ZONE (100–200vh) --- */
+    #bg .b4  { width:70vw;  height:70vw;  top:30%;   left:-10%;  background:#38bdf8; animation: blob4 20s ease-in-out infinite; }
+    #bg .b5  { width:50vw;  height:50vw;  top:45%;   right:-15%; background:#86efac; opacity:0.4; animation: blob1 28s ease-in-out infinite reverse; }
+    #bg .b6  { width:45vw;  height:45vw;  top:55%;   left:30%;   background:#f0abfc; opacity:0.3; animation: blob2 24s ease-in-out infinite reverse; }
+    /* --- LOWER ZONE (200–300vh) --- */
+    #bg .b7  { width:75vw;  height:75vw;  top:65%;   right:-20%; background:#7dd9f5; animation: blob3 22s ease-in-out infinite; }
+    #bg .b8  { width:55vw;  height:55vw;  top:78%;   left:-5%;   background:#a78bfa; opacity:0.35; animation: blob4 19s ease-in-out infinite; }
+    #bg .b9  { width:40vw;  height:40vw;  top:88%;   left:50%;   background:#34d399; opacity:0.35; animation: blob1 26s ease-in-out infinite reverse; }
+    /* --- BOTTOM ZONE (300–400vh) --- */
+    #bg .b10 { width:80vw;  height:80vw;  top:95%;   left:-15%;  background:#38bdf8; animation: blob2 21s ease-in-out infinite; }
+    #bg .b11 { width:50vw;  height:50vw;  top:110%;  right:-10%; background:#c084fc; opacity:0.3; animation: blob3 23s ease-in-out infinite reverse; }
+    #bg .b12 { width:60vw;  height:60vw;  top:125%;  left:20%;   background:#7dd9f5; animation: blob4 20s ease-in-out infinite; }
+
     #root { position: relative; z-index: 1; }
 
     /* Glassmorphism — alle kort og felter */
@@ -103,7 +88,7 @@
       backdrop-filter: blur(16px) saturate(1.6) !important;
       -webkit-backdrop-filter: blur(16px) saturate(1.6) !important;
       border: 1px solid rgba(255,255,255,0.22) !important;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+      box-shadow: 0 4px 32px rgba(100,180,255,0.15), inset 0 1px 0 rgba(255,255,255,0.2) !important;
     }
     /* Navbar */
     nav, [data-nav] {
@@ -124,8 +109,13 @@
     <div class="b b3"></div>
     <div class="b b4"></div>
     <div class="b b5"></div>
-    <div class="shimmer"></div>
-    <div class="gloss"></div>
+    <div class="b b6"></div>
+    <div class="b b7"></div>
+    <div class="b b8"></div>
+    <div class="b b9"></div>
+    <div class="b b10"></div>
+    <div class="b b11"></div>
+    <div class="b b12"></div>
   </div>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -207,10 +197,10 @@ const C = {
   heroTop: "#00cfff",
   heroBot: "#0055aa",
   // Card surfaces — slightly lighter so they pop on the gradient bg
-  card:    "rgba(255,255,255,0.08)",
-  cardH:   "rgba(255,255,255,0.14)",
-  border:  "rgba(255,255,255,0.18)",
-  border2: "rgba(255,255,255,0.30)",
+  card:    "rgba(255,255,255,0.45)",
+  cardH:   "rgba(255,255,255,0.65)",
+  border:  "rgba(255,255,255,0.6)",
+  border2: "rgba(255,255,255,0.8)",
   // Accent colors
   teal:    "#00d2ff",
   purple:  "#7b2ff7",
@@ -218,9 +208,9 @@ const C = {
   yellow:  "#ebff00",
   pink:    "#ff2d78",
   white:   "#ffffff",
-  offwhite:"#e8eaf0",
-  muted:   "rgba(232,234,240,0.5)",
-  dim:     "rgba(232,234,240,0.25)",
+  offwhite:"#1a2744",
+  muted:   "rgba(10,30,80,0.5)",
+  dim:     "rgba(10,30,80,0.3)",
   // Gradients
   heroGrad: "linear-gradient(180deg, #00cfff 0%, #0077cc 60%, #003a80 100%)",
   tabGrad:  "linear-gradient(180deg, #0055aa 0%, #003a80 100%)",
@@ -262,7 +252,7 @@ function Spinner() {
 
 function HeroHeader({ title, sub, children }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.07)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"48px 20px 40px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+    <div style={{ background: "rgba(255,255,255,0.35)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"48px 20px 40px", textAlign:"center", position:"relative", overflow:"hidden" }}>
       {/* Diagonal stripe overlay */}
       <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
       {/* Radial glow */}
@@ -282,7 +272,7 @@ function HeroHeader({ title, sub, children }) {
 
 function TabBar({ tabs, active, onChange }) {
   return (
-    <div style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(20px) saturate(1.8)", WebkitBackdropFilter:"blur(20px) saturate(1.8)", borderBottom:"1px solid rgba(255,255,255,0.15)", display:"flex", overflowX:"auto", position:"sticky", top:0, zIndex:20 }}>
+    <div style={{ background:"rgba(255,255,255,0.5)", backdropFilter:"blur(20px) saturate(1.8)", WebkitBackdropFilter:"blur(20px) saturate(1.8)", borderBottom:"1px solid rgba(255,255,255,0.7)", display:"flex", overflowX:"auto", position:"sticky", top:0, zIndex:20 }}>
       {tabs.map(t => (
         <button key={t.id} onClick={()=>onChange(t.id)} style={{
           flexShrink:0, padding:"14px 16px", background:"none", border:"none",
@@ -303,14 +293,14 @@ function TabBar({ tabs, active, onChange }) {
 function Card({ children, glow, accent, style:sx={} }) {
   return (
     <div style={{
-      background: glow ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.08)",
-      backdropFilter: "blur(18px) saturate(1.6)",
-      WebkitBackdropFilter: "blur(18px) saturate(1.6)",
-      border: `1px solid ${glow ? (accent||C.teal)+"66" : "rgba(255,255,255,0.2)"}`,
+      background: glow ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)",
+      backdropFilter: "blur(20px) saturate(1.8)",
+      WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+      border: `1px solid ${glow ? (accent||C.teal)+"88" : "rgba(255,255,255,0.75)"}`,
       borderRadius:12, padding:16,
       boxShadow: glow
-        ? `0 0 28px ${accent||C.teal}44, inset 0 1px 0 rgba(255,255,255,0.25)`
-        : "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.15)",
+        ? `0 0 28px ${accent||C.teal}44, inset 0 1px 0 rgba(255,255,255,0.9)`
+        : "0 4px 24px rgba(100,180,255,0.15), inset 0 1px 0 rgba(255,255,255,0.9)",
       ...sx
     }}>
       {children}
@@ -936,7 +926,7 @@ function LeagueHero({ league }) {
   const totalPossible = players.length * activeLeagues.length;
 
   return (
-    <div style={{ background: "rgba(255,255,255,0.07)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"40px 20px 32px", position:"relative", overflow:"hidden" }}>
+    <div style={{ background: "rgba(255,255,255,0.35)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", padding:"40px 20px 32px", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
       <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 50% 0%,rgba(0,210,255,0.25) 0%,transparent 70%)", pointerEvents:"none" }}/>
       <div style={{ position:"relative", maxWidth:520, margin:"0 auto" }}>
@@ -1031,14 +1021,14 @@ function App() {
   ];
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"rgba(0,10,40,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
+    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
       <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, color:"#fff" }}>LIGA<span style={{ color:C.teal }}>MANAGER</span></div>
       <Spinner/>
     </div>
   );
 
   if (!league) return (
-    <div style={{ minHeight:"100vh", background:"rgba(0,10,40,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ textAlign:"center", maxWidth:340 }}>
         <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
         <h2 style={{ color:"#fff", fontWeight:900, fontSize:20, marginBottom:8 }}>Kunne ikke hente gruppe</h2>
@@ -1070,7 +1060,7 @@ function App() {
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:"rgba(0,10,40,0.35)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", color:"#fff", fontFamily:"'Rajdhani','Arial Narrow',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"rgba(255,255,255,0.2)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", color:"#0a1e50", fontFamily:"'Rajdhani','Arial Narrow',sans-serif" }}>
 
       {/* Hero */}
       <LeagueHero league={league}/>
