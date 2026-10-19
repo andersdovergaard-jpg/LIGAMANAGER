@@ -28,40 +28,26 @@ const ADMIN_CODE = "1919";
 
 async function loadGroup(code) {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/league_groups?code=eq.${code}&select=data`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/get_group`, {
+      method: "POST",
       headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_code: code }),
     });
-    if (!res.ok) {
-      // fallback: try table name "groups"
-      const res2 = await fetch(`${SUPA_URL}/rest/v1/groups?code=eq.${code}&select=data`, {
-        headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
-      });
-      if (!res2.ok) return null;
-      const rows2 = await res2.json();
-      return rows2 && rows2.length > 0 ? rows2[0].data : null;
+    if (res.ok) {
+      const d = await res.json();
+      return d || null;
     }
-    const rows = await res.json();
-    return rows && rows.length > 0 ? rows[0].data : null;
+    return null;
   } catch(e) { console.error(e); return null; }
 }
 
-let _groupTable = null;
 async function saveGroup(code, data) {
   try {
-    const table = _groupTable || "league_groups";
-    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?code=eq.${code}`, {
-      method: "PATCH",
-      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
-      body: JSON.stringify({ data }),
+    await fetch(`${SUPA_URL}/rest/v1/rpc/upsert_group`, {
+      method: "POST",
+      headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_code: code, p_data: data }),
     });
-    if (!res.ok && !_groupTable) {
-      // try rpc upsert fallback
-      await fetch(`${SUPA_URL}/rest/v1/rpc/upsert_group`, {
-        method: "POST",
-        headers: { "apikey": SUPA_KEY, "Authorization": `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ p_code: code, p_data: data }),
-      });
-    }
   } catch(e) { console.error(e); }
 }
 
@@ -861,17 +847,18 @@ function App() {
         <RoundBtn onClick={()=>window.location.reload()} style={{ marginTop:4 }}>Prøv igen</RoundBtn>
         <div style={{ marginTop:20 }}>
           <button onClick={async()=>{
-            const urls = [
-              `${SUPA_URL}/rest/v1/league_groups?code=eq.${GROUP_CODE}&select=data`,
-              `${SUPA_URL}/rest/v1/groups?code=eq.${GROUP_CODE}&select=data`,
-            ];
             let msg = "";
-            for(const url of urls){
+            const tests = [
+              { label:"rpc/get_group", url:`${SUPA_URL}/rest/v1/rpc/get_group`, method:"POST", body:JSON.stringify({p_code:GROUP_CODE}) },
+              { label:"rpc/upsert_group", url:`${SUPA_URL}/rest/v1/rpc/upsert_group`, method:"POST", body:JSON.stringify({p_code:"TEST",p_data:{}}) },
+              { label:"groups GET", url:`${SUPA_URL}/rest/v1/groups?code=eq.${GROUP_CODE}&select=data`, method:"GET", body:null },
+            ];
+            for(const t of tests){
               try{
-                const r = await fetch(url,{headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`}});
+                const r = await fetch(t.url,{method:t.method,headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":"application/json"},body:t.body||undefined});
                 const txt = await r.text();
-                msg += `\n${url.split("/v1/")[1]}: ${r.status} → ${txt.slice(0,120)}`;
-              }catch(e){msg+=`\n${url}: FEJL ${e.message}`;}
+                msg += `\n${t.label}: ${r.status} → ${txt.slice(0,100)}`;
+              }catch(e){msg+=`\n${t.label}: NETVÆRKSFEJL`;}
             }
             alert(msg);
           }} style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.2)", color:"rgba(255,255,255,0.5)", borderRadius:40, padding:"8px 16px", fontSize:11, cursor:"pointer", fontFamily:"inherit" }}>
